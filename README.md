@@ -18,6 +18,7 @@
   <img alt="No build step" src="https://img.shields.io/badge/build%20step-none-1f883d">
   <img alt="700 print assertions" src="https://img.shields.io/badge/print%20assertions-700-b3271f">
   <img alt="Works offline" src="https://img.shields.io/badge/works-offline-6e6e78">
+  <img alt="MIT licensed" src="https://img.shields.io/badge/license-MIT-6e6e78">
 </p>
 
 ---
@@ -169,6 +170,13 @@ PDF library, and the browser already makes better ones. Print is the PDF path.
 
 Two things: a font, if you pick one other than System, and Google Analytics. Neither affects what
 prints, and neither goes into the downloaded file.
+
+## License
+
+MIT. Do what you like with it, including commercially, as long as the copyright notice comes
+along. See [LICENSE](LICENSE).
+
+The vendored holiday data keeps its own MIT notice in `vendor/holidate/LICENSE.md`.
 
 ## Files
 
