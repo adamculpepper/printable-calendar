@@ -83,8 +83,9 @@ function updatePreviewZoom() {
     return;
   }
 
-  const pageWidthPx =
-    (lastResult.layout.metrics.printableWidthMm / MM_PER_INCH) * CSS_PIXELS_PER_INCH;
+  // The screen preview draws the whole sheet, margins included, so the fit is
+  // measured against the paper rather than the printable area.
+  const pageWidthPx = (lastResult.layout.paper.widthMm / MM_PER_INCH) * CSS_PIXELS_PER_INCH;
   const availableWidthPx = elements.previewFrame.clientWidth - 8;
   const zoom = Math.min(1, availableWidthPx / pageWidthPx);
 

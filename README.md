@@ -29,7 +29,7 @@ tells you which paper size and orientation to pick for whatever you have configu
 | Year | 2025, 2026, 2027, or anything you type |
 | Starting Month | Any month. The run continues from there and rolls over the year boundary. |
 | Months | 1 to 120 |
-| Day Size | Big or Small. Scales the date numbers; the grid fills the sheet either way. |
+| Day Size | Big, Small or Tiny. Scales the date numbers; the grid fills the sheet either way. |
 | Orientation | Landscape or Portrait |
 | Paper Size | Letter, 11x17, Legal, Poster, Movie Poster, A4 |
 | Notes | Ruled column beside the grid on single-month sheets, ruled strip along the bottom on multi-month sheets |
@@ -119,8 +119,10 @@ There is also `scripts/capture-preview.mjs`, which renders a handful of configur
 
 ## Holidays
 
-Holiday data comes from [holidate](https://github.com/zachnology/holidate) (MIT), installed from
-npm and vendored into `vendor/holidate/holidate.js` by `npm run vendor`. The package ships as
+Holiday data comes from [holidate](https://github.com/zachnology/holidate), an MIT-licensed
+library by Zachary Gomez, installed from npm and vendored into `vendor/holidate/holidate.js` by
+`npm run vendor`. The copyright notice in the generated file is lifted from the upstream license
+rather than retyped. The package ships as
 CommonJS across three files, so the vendor script wraps the sources verbatim in a small module
 shim rather than copying them by hand and letting them drift. File hashes are recorded in the
 generated header.

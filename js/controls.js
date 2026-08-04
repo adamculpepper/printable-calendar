@@ -11,6 +11,7 @@
 
 import {
   CALENDAR_TYPES,
+  DAY_SIZES,
   DEFAULT_OPTIONS,
   GRID_COLORS,
   HOLIDAY_MODES,
@@ -45,7 +46,11 @@ const ICON_SHAPES = {
   ],
   'day-small': [
     { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
-    { x: 12.1, y: 5, width: 3.1, height: 3.1, rx: 0.4, filled: true },
+    { x: 10.4, y: 5, width: 4.8, height: 4.8, rx: 0.6, filled: true },
+  ],
+  'day-tiny': [
+    { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
+    { x: 12.8, y: 5, width: 2.4, height: 2.4, rx: 0.3, filled: true },
   ],
 };
 
@@ -123,9 +128,12 @@ const FIELDS = {
     label: 'Months',
     controls: [
       { type: 'number', key: 'monthCount', min: 1, max: 120, step: 1, ariaLabel: 'Number of months' },
+      {
+        type: 'hint',
+        text: (options, result) =>
+          `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
+      },
     ],
-    describe: (options, result) =>
-      `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
   },
   paperSize: {
     label: 'Paper Size',
@@ -161,6 +169,7 @@ const FIELDS = {
         choices: [
           { value: 'big', label: 'Big', icon: 'day-big' },
           { value: 'small', label: 'Small', icon: 'day-small' },
+          { value: 'tiny', label: 'Tiny', icon: 'day-tiny' },
         ],
       },
     ],
@@ -216,7 +225,9 @@ const FIELDS = {
   },
   gridColor: {
     label: 'Grid Color',
-    visibleWhen: (options) => options.gridLines,
+    // Kept in place rather than removed when the grid is off, so the panel does
+    // not reflow underneath the pointer; it just stops being operable.
+    disabledWhen: (options) => !options.gridLines,
     controls: [
       {
         type: 'buttons',
@@ -230,14 +241,14 @@ const FIELDS = {
     ],
   },
   shadeWeekends: {
-    label: 'Weekends',
+    label: 'Weekends Shaded',
     controls: [
       {
         type: 'buttons',
         key: 'shadeWeekends',
         choices: [
-          { value: false, label: 'Not Shaded' },
-          { value: true, label: 'Shaded' },
+          { value: false, label: 'No' },
+          { value: true, label: 'Yes' },
         ],
       },
     ],
@@ -273,9 +284,9 @@ const CONTROL_ROWS = [
   [FIELDS.year],
   [FIELDS.startMonth, FIELDS.monthCount],
   [FIELDS.orientation, FIELDS.daySize],
-  [FIELDS.weekStart, FIELDS.includeNotes],
+  [FIELDS.weekStart, FIELDS.shadeWeekends],
   [FIELDS.gridLines, FIELDS.gridColor],
-  [FIELDS.shadeWeekends, FIELDS.showAdjacentDays],
+  [FIELDS.includeNotes, FIELDS.showAdjacentDays],
   [FIELDS.holidays],
 ];
 
@@ -290,7 +301,7 @@ const OPTION_TYPES = {
   weekStart: { kind: 'integer', min: 0, max: 1 },
   orientation: { kind: 'enum', values: ['landscape', 'portrait'] },
   paperSize: { kind: 'enum', values: Object.keys(PAPER_SIZES) },
-  daySize: { kind: 'enum', values: ['big', 'small'] },
+  daySize: { kind: 'enum', values: Object.keys(DAY_SIZES) },
   gridLines: { kind: 'boolean' },
   gridColor: { kind: 'color' },
   shadeWeekends: { kind: 'boolean' },
@@ -390,7 +401,7 @@ function toControlId(control, choiceValue) {
  */
 const MAXIMUM_SEGMENTED_CHOICES = 3;
 
-function createButtonGroup(control, options, onChange, labelId) {
+function createButtonGroup(control, { options, onChange, labelId, disabled }) {
   const group = document.createElement('div');
   group.className = control.choices.length <= MAXIMUM_SEGMENTED_CHOICES
     ? 'option-group is-segmented'
@@ -404,6 +415,7 @@ function createButtonGroup(control, options, onChange, labelId) {
     button.className = 'option-button';
     button.dataset.controlId = toControlId(control, choice.value);
     button.setAttribute('aria-pressed', String(options[control.key] === choice.value));
+    button.disabled = disabled;
 
     const icon = choice.icon ? createIcon(choice.icon) : null;
 
@@ -427,11 +439,12 @@ function createButtonGroup(control, options, onChange, labelId) {
   return group;
 }
 
-function createSelect(control, options, onChange) {
+function createSelect(control, { options, onChange, disabled }) {
   const select = document.createElement('select');
   select.className = 'control-select';
   select.dataset.controlId = toControlId(control);
   select.setAttribute('aria-label', control.ariaLabel ?? control.key);
+  select.disabled = disabled;
 
   for (const choice of control.choices) {
     const option = document.createElement('option');
@@ -446,7 +459,7 @@ function createSelect(control, options, onChange) {
   return select;
 }
 
-function createNumberInput(control, options, onChange) {
+function createNumberInput(control, { options, onChange, disabled }) {
   const input = document.createElement('input');
   input.type = 'number';
   input.className = 'control-number';
@@ -456,6 +469,7 @@ function createNumberInput(control, options, onChange) {
   input.value = String(options[control.key]);
   input.dataset.controlId = toControlId(control);
   input.setAttribute('aria-label', control.ariaLabel ?? control.key);
+  input.disabled = disabled;
 
   input.addEventListener('change', () => {
     const value = coerce(control.key, input.value);
@@ -474,13 +488,14 @@ function createNumberInput(control, options, onChange) {
   return input;
 }
 
-function createColorInput(control, options, onChange) {
+function createColorInput(control, { options, onChange, disabled }) {
   const input = document.createElement('input');
   input.type = 'color';
   input.className = 'control-color';
   input.value = options[control.key];
   input.dataset.controlId = toControlId(control);
   input.setAttribute('aria-label', control.ariaLabel ?? control.key);
+  input.disabled = disabled;
 
   /*
    * `change` rather than `input`: the picker fires `input` continuously while
@@ -492,11 +507,20 @@ function createColorInput(control, options, onChange) {
   return input;
 }
 
+/** Read-only text that belongs beside a control rather than under the field. */
+function createHint(control, { options, result }) {
+  const hint = document.createElement('span');
+  hint.className = 'control-hint';
+  hint.textContent = control.text(options, result);
+  return hint;
+}
+
 const CONTROL_BUILDERS = {
   buttons: createButtonGroup,
   select: createSelect,
   number: createNumberInput,
   color: createColorInput,
+  hint: createHint,
 };
 
 /**
@@ -542,8 +566,10 @@ function restoreFocus(container, captured) {
 }
 
 function renderField(field, fieldId, options, result, onChange) {
+  const disabled = Boolean(field.disabledWhen?.(options));
+
   const fieldElement = document.createElement('div');
-  fieldElement.className = 'control-field';
+  fieldElement.className = disabled ? 'control-field is-disabled' : 'control-field';
 
   const labelId = `${fieldId}-label`;
   const label = document.createElement('div');
@@ -555,13 +581,15 @@ function renderField(field, fieldId, options, result, onChange) {
   const controlsCell = document.createElement('div');
   controlsCell.className = 'control-controls';
 
+  const context = { options, result, onChange, labelId, disabled };
+
   for (const control of field.controls) {
-    controlsCell.append(CONTROL_BUILDERS[control.type](control, options, onChange, labelId));
+    controlsCell.append(CONTROL_BUILDERS[control.type](control, context));
   }
 
   fieldElement.append(controlsCell);
 
-  const note = field.describe?.(options, result);
+  const note = disabled ? '' : field.describe?.(options, result);
 
   if (note) {
     const noteElement = document.createElement('p');
@@ -585,21 +613,10 @@ export function renderControls(container, options, result, onChange) {
   const fragment = document.createDocumentFragment();
 
   CONTROL_ROWS.forEach((row, rowIndex) => {
-    const visibleFields = row.filter((field) => !field.visibleWhen || field.visibleWhen(options));
-
-    if (!visibleFields.length) {
-      return;
-    }
-
     const rowElement = document.createElement('div');
-    rowElement.className = 'control-row';
+    rowElement.className = row.length > 1 ? 'control-row is-split' : 'control-row';
 
-    // A row whose partner field is hidden gives its whole width to the survivor.
-    if (visibleFields.length > 1) {
-      rowElement.classList.add('is-split');
-    }
-
-    visibleFields.forEach((field, fieldIndex) => {
+    row.forEach((field, fieldIndex) => {
       rowElement.append(
         renderField(field, `control-${rowIndex}-${fieldIndex}`, options, result, onChange),
       );

@@ -71,6 +71,13 @@ function check(description, condition, detail = '') {
  * would be scrollable. Both are failures.
  */
 const MEASUREMENT_EXPRESSION = `(() => {
+  // Measure at full size. The preview scales sheets down to fit the window, and
+  // a scaled rect would shrink every tolerance along with it.
+  const previewStyle = document.getElementById('preview-style');
+  if (previewStyle) {
+    previewStyle.textContent = '.calendar-pages { --preview-zoom: 1; }';
+  }
+
   const pages = Array.from(document.querySelectorAll('.page'));
   const cell = document.querySelector('.day-cell');
   const cellStyle = cell ? getComputedStyle(cell) : null;
@@ -86,11 +93,16 @@ const MEASUREMENT_EXPRESSION = `(() => {
       const lastBlockBottom = Math.max(...blocks.map((block) => block.getBoundingClientRect().bottom));
       const grids = Array.from(page.querySelectorAll('.day-grid'));
 
+      // On screen the sheet is drawn at full paper size with the margin as
+      // padding, so the content edge is the padding box, not the border box.
+      // In print the padding is zero and these are the same thing.
+      const paddingBottom = parseFloat(getComputedStyle(page).paddingBottom) || 0;
+
       return {
         widthPx: pageBox.width,
         heightPx: pageBox.height,
         overflowPx: page.scrollHeight - page.clientHeight,
-        bottomGapPx: pageBox.bottom - lastBlockBottom,
+        bottomGapPx: pageBox.bottom - paddingBottom - lastBlockBottom,
         gridCount: grids.length,
         weekCounts: grids.map((grid) => Number(grid.dataset.weeks)),
         rowHeights: grids.map((grid) => {
@@ -472,8 +484,9 @@ async function verifyStandaloneExport(session, port) {
         worstOverflow: Math.max(...pages.map((page) => page.scrollHeight - page.clientHeight)),
         worstGap: Math.max(...pages.map((page) => {
           const box = page.getBoundingClientRect();
+          const paddingBottom = parseFloat(getComputedStyle(page).paddingBottom) || 0;
           const bottom = Math.max(...Array.from(page.children).map((child) => child.getBoundingClientRect().bottom));
-          return box.bottom - bottom;
+          return box.bottom - paddingBottom - bottom;
         })),
       };
     })()`);

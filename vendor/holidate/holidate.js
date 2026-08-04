@@ -9,8 +9,8 @@
  *   src/localization/us.service.js   sha256:7d4871a8e0f39bc3
  *   src/holidate.js                  sha256:e5e6d239c6e20dad
  *
- * Copyright (c) Zach Ledbetter and holidate contributors. Released under the
- * MIT License; see vendor/holidate/LICENSE.md.
+ * Copyright (c) 2021 Zachary Gomez
+ * Released under the MIT License; see vendor/holidate/LICENSE.md.
  * https://github.com/zachnology/holidate
  */
 

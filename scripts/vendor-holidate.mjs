@@ -48,6 +48,21 @@ function readPackageVersion() {
   return manifest.version;
 }
 
+/**
+ * Lifts the copyright line out of the upstream license rather than restating
+ * it. MIT requires the notice to travel with the code, and a hand-copied name
+ * is exactly the sort of thing that ends up wrong.
+ */
+function readCopyrightNotice(licenseText) {
+  const line = licenseText.split('\n').find((candidate) => /^copyright \(c\)/i.test(candidate.trim()));
+
+  if (!line) {
+    throw new Error('holidate: no copyright line found in LICENSE.md');
+  }
+
+  return line.trim();
+}
+
 const modules = sourceFiles.map((file) => {
   const source = readFileSync(resolve(packageRoot, file.path), 'utf8');
   return {
@@ -58,6 +73,9 @@ const modules = sourceFiles.map((file) => {
 });
 
 const version = readPackageVersion();
+const licenseSource = resolve(packageRoot, 'LICENSE.md');
+const licenseText = readFileSync(licenseSource, 'utf8');
+const copyrightNotice = readCopyrightNotice(licenseText);
 
 const provenance = modules
   .map((module) => ` *   ${module.path.padEnd(32)} sha256:${module.sha256}`)
@@ -78,8 +96,8 @@ const bundle = `/**
  *
 ${provenance}
  *
- * Copyright (c) Zach Ledbetter and holidate contributors. Released under the
- * MIT License; see vendor/holidate/LICENSE.md.
+ * ${copyrightNotice}
+ * Released under the MIT License; see vendor/holidate/LICENSE.md.
  * https://github.com/zachnology/holidate
  */
 
@@ -125,12 +143,7 @@ export default { getHolidays, HOLIDATE_VERSION };
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, bundle, 'utf8');
 
-const licenseSource = resolve(packageRoot, 'LICENSE.md');
-writeFileSync(
-  resolve(dirname(outputPath), 'LICENSE.md'),
-  readFileSync(licenseSource, 'utf8'),
-  'utf8'
-);
+writeFileSync(resolve(dirname(outputPath), 'LICENSE.md'), licenseText, 'utf8');
 
 console.log(`Vendored holidate ${version} -> ${outputPath}`);
 for (const module of modules) {

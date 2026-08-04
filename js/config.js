@@ -146,6 +146,9 @@ export const HOLIDAY_MODES = {
 export const DAY_SIZES = {
   big: { label: 'Big', dateScale: 1.4, labelScale: 1 },
   small: { label: 'Small', dateScale: 1, labelScale: 1 },
+  // Below the reference's own range, for when the date is meant to stay out of
+  // the way of whatever gets written in the cell.
+  tiny: { label: 'Tiny', dateScale: 0.7, labelScale: 1 },
 };
 
 /** Date number height as a fraction of the cell it sits in, at Small. */

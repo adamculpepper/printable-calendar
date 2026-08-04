@@ -301,7 +301,19 @@
 /* Screen preview -------------------------------------------------------- */
 
 @media screen {
+  /*
+   * On screen the sheet is drawn at its full paper size with the margin as real
+   * whitespace inside it, so the preview shows what comes out of the printer
+   * rather than just the printable area floating on its own. In print the @page
+   * rule supplies that margin, so the base rule stands and this does not apply.
+   */
   .page {
+    width: var(--page-width);
+    /* The printable area plus its margins, rather than the paper height, so the
+       content box comes out exactly the printable height. The two differ only
+       by the sub-millimeter trim that keeps Chrome from emitting a blank page. */
+    height: calc(var(--printable-height) + var(--page-margin) * 2);
+    padding: var(--page-margin);
     zoom: var(--preview-zoom, 1);
     box-shadow: 0 1px 2px rgb(0 0 0 / 18%), 0 10px 30px rgb(0 0 0 / 12%);
   }
@@ -321,10 +333,18 @@
     gap: 0;
   }
 
+  /*
+   * Centered on the sheet, which matters when the print dialog's margin setting
+   * disagrees with ours. Choosing "None" there makes Chrome ignore the @page
+   * margin and hand the full sheet over as the page box; the sheet is then
+   * wider than this fixed-size page and the slack is exactly the margin we
+   * asked for, so centering puts it back where it belongs. With "Default" there
+   * is no slack and this does nothing.
+   */
   .page {
     zoom: 1;
     box-shadow: none;
-    margin: 0;
+    margin: 0 auto;
   }
 
   /*
