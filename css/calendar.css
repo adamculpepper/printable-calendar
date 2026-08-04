@@ -29,10 +29,22 @@
   gap: 28px;
 }
 
+/*
+ * The sheet is the whole piece of paper, with the margin as padding inside it,
+ * rather than just the printable area sitting in a larger page box. That is
+ * what keeps it flush: the @page rule asks for no margin of its own, so the
+ * element and the page box are the same size and there is no slack to pool at
+ * the bottom whatever the print dialog's margin setting says.
+ *
+ * The height is the printable area plus its two margins rather than the paper
+ * height, which is the same number less the sub-millimeter trim that stops
+ * Chrome emitting a blank trailing page.
+ */
 .page {
   box-sizing: border-box;
-  width: var(--printable-width);
-  height: var(--printable-height);
+  width: var(--page-width);
+  height: calc(var(--printable-height) + var(--page-margin) * 2);
+  padding: var(--page-margin);
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -350,19 +362,9 @@
 /* Screen preview -------------------------------------------------------- */
 
 @media screen {
-  /*
-   * On screen the sheet is drawn at its full paper size with the margin as real
-   * whitespace inside it, so the preview shows what comes out of the printer
-   * rather than just the printable area floating on its own. In print the @page
-   * rule supplies that margin, so the base rule stands and this does not apply.
-   */
+  /* Screen and print now draw the same box, so the preview only adds the scale
+     that fits it in the window and something to lift it off the background. */
   .page {
-    width: var(--page-width);
-    /* The printable area plus its margins, rather than the paper height, so the
-       content box comes out exactly the printable height. The two differ only
-       by the sub-millimeter trim that keeps Chrome from emitting a blank page. */
-    height: calc(var(--printable-height) + var(--page-margin) * 2);
-    padding: var(--page-margin);
     zoom: var(--preview-zoom, 1);
     box-shadow: 0 1px 2px rgb(0 0 0 / 18%), 0 10px 30px rgb(0 0 0 / 12%);
   }

@@ -939,10 +939,19 @@ kbd {
     background: #fff;
   }
 
+  /*
+   * Nothing but the calendar reaches the paper, and that has to hold for things
+   * this page did not put there. Browser extensions inject their own overlays
+   * at body level (a breakpoint badge, a grid ruler, a colour picker), and a
+   * fixed one lands on every printed sheet. Allowing only the shell through
+   * covers those as well as our own header and footer.
+   */
+  body > *:not(.app-shell) {
+    display: none !important;
+  }
+
   /* The whole sidebar goes, not just the options card: the actions and print
      settings live in a second card beside it and would otherwise print. */
-  .app-header,
-  .app-footer,
   .sidebar,
   .preview-bar {
     display: none;

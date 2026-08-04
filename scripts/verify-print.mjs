@@ -40,7 +40,12 @@ import {
   computeGregorianEaster,
   getPrimaryHolidayName,
 } from '../js/holidays.js';
-import { DEFAULT_OPTIONS, PAPER_SIZES } from '../js/config.js';
+import {
+  DEFAULT_OPTIONS,
+  PAGE_HEIGHT_SAFETY_MM,
+  PAPER_SIZES,
+  applyOrientation,
+} from '../js/config.js';
 import { computeLayout } from '../js/layout.js';
 import { readOptionsFromUrl } from '../js/controls.js';
 
@@ -49,7 +54,9 @@ const runFullMatrix = process.argv.includes('--full');
 
 const POINTS_PER_INCH = 72;
 const MM_PER_INCH = 25.4;
+const CSS_PIXELS_PER_INCH = 96;
 const PAGE_SIZE_TOLERANCE_POINTS = 1.5;
+const PAGE_HEIGHT_SAFETY_PX = (PAGE_HEIGHT_SAFETY_MM / MM_PER_INCH) * CSS_PIXELS_PER_INCH;
 
 const failures = [];
 const passes = [];
@@ -697,6 +704,26 @@ async function run() {
         Math.abs(firstPageSize.width - expectedSize.width) < PAGE_SIZE_TOLERANCE_POINTS &&
           Math.abs(firstPageSize.height - expectedSize.height) < PAGE_SIZE_TOLERANCE_POINTS,
         `got ${firstPageSize.width.toFixed(1)}x${firstPageSize.height.toFixed(1)}pt`,
+      );
+
+      /*
+       * The sheet element has to be the whole piece of paper, not just the
+       * printable area. When it was the smaller box, the PDF page came out the
+       * right size and the page count was right, but the sheet sat inside it
+       * with the slack along the bottom, and nothing here noticed.
+       */
+      const paperBox = applyOrientation(testCase.options.paperSize, testCase.options.orientation);
+      const expectedWidthPx = (paperBox.widthMm / MM_PER_INCH) * CSS_PIXELS_PER_INCH;
+      const expectedHeightPx = (paperBox.heightMm / MM_PER_INCH) * CSS_PIXELS_PER_INCH;
+      const widestSheet = Math.max(...measured.pages.map((page) => page.widthPx));
+      const tallestSheet = Math.max(...measured.pages.map((page) => page.heightPx));
+
+      check(
+        `${label}: the sheet fills the paper, leaving no slack in the page box`,
+        Math.abs(widestSheet - expectedWidthPx) < 1 &&
+          expectedHeightPx - tallestSheet < PAGE_HEIGHT_SAFETY_PX + 0.5 &&
+          tallestSheet <= expectedHeightPx + 0.5,
+        `sheet ${widestSheet.toFixed(1)}x${tallestSheet.toFixed(1)}px, paper ${expectedWidthPx.toFixed(1)}x${expectedHeightPx.toFixed(1)}px`,
       );
 
       const worstOverflow = Math.max(...measured.pages.map((page) => page.overflowPx));

@@ -324,9 +324,16 @@ export function buildPageStylesheet(layout) {
     .map(([property, value]) => `  ${property}: ${value};`)
     .join('\n');
 
+  /*
+   * No margin here on purpose. The sheet element carries the margin as padding
+   * and is sized to the whole page, so the page box and the sheet match exactly.
+   * Asking @page for a margin instead leaves the sheet smaller than the box
+   * whenever the print dialog's own margin setting disagrees, and that gap shows
+   * up as dead space along the bottom of every page.
+   */
   return `@page {
   size: ${mm(layout.paper.widthMm)} ${mm(layout.paper.heightMm)};
-  margin: ${mm(layout.paper.marginMm)};
+  margin: 0;
 }
 
 :root {
