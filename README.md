@@ -77,6 +77,11 @@ A few other things that matter on paper:
   exactly the printable area is a coin flip in Chrome, because any sub-pixel rounding tips it over
   the page box and emits a blank trailer. The trim is invisible on paper and removes the question.
 - System font stack only, so there is no font to load and nothing to go wrong mid-print.
+- Type is sized against the cell it sits in, not against a fixed scale, so a five-row month gets
+  larger date numbers than a six-row one. The ratios come from measuring print-a-calendar.com's
+  own rendered sheet: date numbers at about 0.21 of the cell height on Small and 0.29 on Big,
+  weekday labels slightly larger than the date numbers, and a month title about 2.5 times the
+  date numbers. Everything here lands within a few percent of those.
 - `css/calendar.css` stands alone. It carries its own box-sizing reset and its own print rules
   rather than borrowing them from the app stylesheet, because the downloaded file ships that one
   sheet and nothing else.
@@ -135,8 +140,9 @@ anchor moves the whole set.
 Where two holidays share a date, the federal one wins the cell. June 19 2022 was both Juneteenth
 and Father's Day, and without an explicit precedence rule the cell printed as Father's Day.
 
-Two federal holidays have names long enough to swamp a day cell, so they are shortened for
-display. In layouts where cells are too narrow for a name at all, the date is bolded and given a
+Holiday names print small and light along the bottom of the cell, on a single line, truncated
+rather than wrapped. Two federal holidays have names long enough to swamp a cell even so, and
+those are shortened. Where cells are too narrow for a name at all, the date is bolded and given a
 small ring, with the full name available to screen readers and on hover.
 
 ## Assumptions
@@ -145,6 +151,10 @@ Worth stating plainly, since the reference site does not publish its own:
 
 Poster is taken as 18 x 24 in, and Movie Poster as 27 x 40 in, the US one sheet. Neither size has
 a single standard, so both live in `PAPER_SIZES` in `js/config.js` if you want different numbers.
+
+Margins are 0.35 in where the reference uses 0.5 in. That is a deliberate difference: the point of
+this calendar is writing space, and the reference also stops its grid short of the bottom margin
+where this one fills to it.
 
 Day Size controls the typographic scale of the date numbers. It does not shrink the grid, because
 the grid filling the sheet is a hard requirement here.

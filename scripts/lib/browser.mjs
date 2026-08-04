@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, normalize, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const MIME_TYPES = {
@@ -24,10 +24,17 @@ const MIME_TYPES = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
 };
 
 /** Serves `rootDirectory` on an ephemeral port, refusing paths that escape it. */
-export function startStaticServer(rootDirectory) {
+export function startStaticServer(requestedRoot) {
+  // Normalized so the containment check below compares like with like: a caller
+  // passing forward slashes on Windows would otherwise fail every request.
+  const rootDirectory = resolve(requestedRoot);
+
   const server = createServer((request, response) => {
     const requestPath = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
     const relativePath = requestPath === '/' ? '/index.html' : requestPath;

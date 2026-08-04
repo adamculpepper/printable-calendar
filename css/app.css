@@ -106,40 +106,93 @@ body {
   background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: 10px;
-  padding: 6px 20px 20px;
+  padding: 6px 18px 18px;
+
+  /* A sticky panel taller than the window would pin its top and put the Print
+     button permanently out of reach, so it scrolls within itself instead. On a
+     tall window there is nothing to scroll and no scrollbar appears. */
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+
+  /* Lets the fields below react to the panel's own width rather than the
+     window's, which is what actually decides whether a label fits. */
+  container-type: inline-size;
+  container-name: panel;
 }
 
+/*
+ * Label above its controls, and narrow options paired two to a row. Stacking
+ * the label gives each button group the full width of its column, and pairing
+ * keeps the whole panel within a screen instead of running off the bottom.
+ */
 .control-row {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr);
-  gap: 10px 14px;
-  align-items: start;
-  padding: 11px 0;
+  gap: 7px 14px;
+  padding: 9px 0;
   border-bottom: 1px solid var(--rule);
+}
+
+.control-row.is-split {
+  grid-template-columns: 1fr 1fr;
 }
 
 .control-row:last-of-type {
   border-bottom: 0;
 }
 
-.control-label {
-  padding-top: 5px;
-  color: var(--ink-soft);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: right;
-  line-height: 1.3;
+.control-field {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
 }
 
-.control-options {
+.control-label {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+/* The row of controls belonging to one field: usually a single group, but Year
+   and Grid Color pair a group with a free-entry box beside it. */
+.control-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.option-group {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
 
+/*
+ * Segmented control: one bordered pill split into equal parts, so a set of
+ * mutually exclusive choices reads as a single switch and squares off against
+ * the select boxes and inputs sharing the panel.
+ */
+.option-group.is-segmented {
+  flex: 1 1 0;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
 .option-button {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--surface-raised);
@@ -149,7 +202,49 @@ body {
   font-weight: 550;
   padding: 6px 11px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 90ms ease, color 90ms ease, border-color 90ms ease;
+}
+
+.is-segmented .option-button {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 6px 8px;
+}
+
+.is-segmented .option-button:first-child {
+  border-left: 0;
+}
+
+.option-icon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+/*
+ * Below this the two paired columns are too narrow for a word like "Landscape"
+ * beside its neighbor, so the icon carries the meaning on its own. The label
+ * stays in the accessibility tree and in the tooltip rather than being removed.
+ */
+@container panel (max-width: 430px) {
+  .control-row.is-split .option-button.has-icon {
+    padding: 6px 9px;
+  }
+
+  .control-row.is-split .option-button.has-icon .option-button-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 .option-button:hover {
@@ -161,6 +256,12 @@ body {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
+}
+
+/* The segmented pill clips its children, so the ring has to sit inside. */
+.is-segmented .option-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 
 .option-button:focus-visible,
@@ -185,7 +286,8 @@ body {
 }
 
 .control-select {
-  min-width: 130px;
+  width: 100%;
+  min-width: 0;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
     linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
   background-position: right 12px center, right 7px center;
@@ -194,8 +296,13 @@ body {
   padding-right: 26px;
 }
 
+/*
+ * Sits next to a segmented group on the Year and Grid Color rows, so it gets a
+ * plainer surface to read as a free-entry box rather than one more segment.
+ */
 .control-number {
-  width: 78px;
+  width: 74px;
+  background: var(--surface);
 }
 
 .control-color {
@@ -209,8 +316,7 @@ body {
 }
 
 .control-note {
-  grid-column: 2;
-  margin: -2px 0 0;
+  margin: 0;
   color: var(--ink-faint);
   font-size: 12px;
   line-height: 1.4;
@@ -307,19 +413,6 @@ body {
   .app-shell,
   .app-header {
     padding: 16px;
-  }
-
-  .control-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .control-label {
-    text-align: left;
-    padding-top: 0;
-  }
-
-  .control-note {
-    grid-column: 1;
   }
 }
 

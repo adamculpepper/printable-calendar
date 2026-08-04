@@ -135,11 +135,27 @@
   /*
    * Grid lines are borders, never background fills, so they survive with
    * "Background graphics" switched off in the print dialog. The container
-   * supplies the top and left edges and each cell supplies its right and
-   * bottom, which draws a complete box with no doubled-up hairlines.
+   * draws the outer frame and each cell draws its right and bottom edge, with
+   * the last column and last row opting out so nothing doubles up.
    */
-  border-top: var(--grid-line-width) solid var(--grid-color);
-  border-left: var(--grid-line-width) solid var(--grid-color);
+  border: var(--grid-line-outer-width) solid var(--grid-color);
+}
+
+/*
+ * Date numbers are sized against the cell they land in, so a five-row month
+ * gets larger numbers than a six-row one, the way the printed reference does.
+ * layout.js emits one value per possible week count and the row count picks.
+ */
+.day-grid[data-weeks='4'] {
+  --date-font: var(--date-font-4);
+}
+
+.day-grid[data-weeks='5'] {
+  --date-font: var(--date-font-5);
+}
+
+.day-grid[data-weeks='6'] {
+  --date-font: var(--date-font-6);
 }
 
 .day-cell {
@@ -152,6 +168,14 @@
   padding: var(--cell-padding);
   border-right: var(--grid-line-width) solid var(--grid-color);
   border-bottom: var(--grid-line-width) solid var(--grid-color);
+}
+
+.week > .day-cell:last-child {
+  border-right: 0;
+}
+
+.week:last-child > .day-cell {
+  border-bottom: 0;
 }
 
 /*
@@ -184,21 +208,22 @@
 }
 
 /*
- * Capped at two lines. A long name is allowed to wrap once, but never to grow
- * far enough to eat the writing space the cell exists to provide.
+ * Sits on the floor of the cell on a single line, so the writing space above it
+ * stays one clean block rather than being interrupted by a wrapped label. Light
+ * enough to read as an annotation next to the date, and truncated rather than
+ * wrapped when a name outruns the column.
  */
 .day-holiday {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  margin-top: calc(var(--cell-padding) * 0.6);
+  margin-top: auto;
+  align-self: stretch;
   font-size: var(--holiday-font);
-  line-height: 1.15;
-  text-align: right;
-  color: #3d3d3d;
+  line-height: 1.2;
+  text-align: left;
+  color: #9a9a9a;
   max-width: 100%;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /*

@@ -15,8 +15,10 @@
 
 import {
   CALENDAR_TYPES,
+  DATE_FONT_OVER_CELL_HEIGHT,
   DAY_SIZES,
   PAGE_HEIGHT_SAFETY_MM,
+  POSSIBLE_WEEK_COUNTS,
   applyOrientation,
 } from './config.js';
 
@@ -94,9 +96,14 @@ export function computeLayout(options) {
 
   const isSingleMonthPerPage = calendarType.monthsPerPage === 1;
 
-  // Hairlines are specified in millimeters rather than pixels so a 27x40 poster
-  // gets a proportionally visible line instead of an invisible one.
-  const gridLineWidthMm = clamp(printableWidthMm * 0.0005, 0.2, 0.5);
+  /*
+   * Hairlines are specified in millimeters rather than pixels so a 27x40 poster
+   * gets a proportionally visible line instead of an invisible one. The floor
+   * is 0.25mm, which is what the reference sheet uses and is also the point
+   * below which a line starts rendering unevenly on screen: at 96dpi a thinner
+   * rule lands on a fraction of a pixel and some columns come out invisible.
+   */
+  const gridLineWidthMm = clamp(printableWidthMm * 0.0005, 0.25, 0.5);
 
   const gutterMm = isSingleMonthPerPage
     ? 0
@@ -143,39 +150,60 @@ export function computeLayout(options) {
   const worstCaseCellHeightMm = dayGridHeightMm / 6;
 
   const titleFontMm = isSingleMonthPerPage
-    ? clamp(titleHeightMm * 0.62, 4, 18)
+    ? clamp(titleHeightMm * 0.66, 4, 18)
     : clamp(titleHeightMm * 0.6, 2.6, 9);
 
   const weekdayFontMm = clamp(
-    Math.min(weekdayRowHeightMm * 0.6, cellWidthMm * 0.22) * daySize.labelScale,
+    Math.min(weekdayRowHeightMm * 0.72, cellWidthMm * 0.26) * daySize.labelScale,
     1.7,
-    6,
+    8,
   );
 
-  const dateFontMm = clamp(
-    Math.min(worstCaseCellHeightMm * 0.3, cellWidthMm * 0.3) * daySize.dateScale,
-    1.9,
-    22,
+  /**
+   * Date numbers are sized against the cell they actually land in, not against
+   * the six-row worst case, which is how the reference behaves: a five-row
+   * month has taller cells and correspondingly larger numbers. One value per
+   * possible week count is emitted and the stylesheet picks by `data-weeks`,
+   * so the arithmetic stays here rather than leaking into CSS.
+   */
+  const dateFontByWeekCount = Object.fromEntries(
+    POSSIBLE_WEEK_COUNTS.map((weekCount) => {
+      const cellHeightMm = dayGridHeightMm / weekCount;
+
+      return [
+        weekCount,
+        clamp(
+          Math.min(cellHeightMm * DATE_FONT_OVER_CELL_HEIGHT, cellWidthMm * 0.3) * daySize.dateScale,
+          1.9,
+          22,
+        ),
+      ];
+    }),
   );
 
-  const cellPaddingMm = clamp(Math.min(cellWidthMm, worstCaseCellHeightMm) * 0.07, 0.5, 3);
-  const holidayFontMm = clamp(dateFontMm * 0.5, 1.5, 4.2);
+  // The six-row value is the safe default and the basis for anything derived.
+  const dateFontMm = dateFontByWeekCount[6];
+
+  // 0.077 puts the date number the same distance off the cell edge as the
+  // reference sheet, measured at about 0.059 of the cell width.
+  const cellPaddingMm = clamp(Math.min(cellWidthMm, worstCaseCellHeightMm) * 0.077, 0.5, 3.3);
+  const holidayFontMm = clamp(dateFontMm * 0.42, 1.4, 3.6);
 
   /*
    * A holiday name needs room in both directions. Width decides whether it can
    * be read at all; height decides whether it would be drawn and then clipped
    * by the cell, which looks like a rendering fault rather than a choice. The
-   * name is capped at two lines, so that is what has to fit under the date.
+   * name sits on one line along the bottom of the cell, so one line is what has
+   * to fit clear of the date number.
    */
   const holidayNameMinimumCellWidthMm = 22;
-  const holidayNameLineHeight = 1.15;
-  const roomUnderDateMm =
-    worstCaseCellHeightMm - cellPaddingMm * 2.6 - dateFontMm;
+  const holidayNameLineHeight = 1.2;
+  const roomUnderDateMm = worstCaseCellHeightMm - cellPaddingMm * 2 - dateFontMm;
 
   const showHolidayNames =
     options.holidays !== 'none' &&
     cellWidthMm >= holidayNameMinimumCellWidthMm &&
-    roomUnderDateMm >= holidayFontMm * holidayNameLineHeight * 2;
+    roomUnderDateMm >= holidayFontMm * holidayNameLineHeight;
 
   /*
    * Ruled lines take their pitch from the area they rule. The bottom strip is a
@@ -237,6 +265,9 @@ export function computeLayout(options) {
       '--day-grid-height': mm(dayGridHeightMm),
       '--cell-padding': mm(cellPaddingMm),
       '--grid-line-width': mm(options.gridLines ? gridLineWidthMm : 0),
+      // The reference draws its outer box at roughly twice the inner hairline,
+      // which reads as a frame rather than just another grid line.
+      '--grid-line-outer-width': mm(options.gridLines ? gridLineWidthMm * 2 : 0),
       '--grid-color': options.gridLines ? options.gridColor : 'transparent',
       '--weekend-shade': options.shadeWeekends
         ? resolveWeekendShade(options.gridColor)
@@ -244,6 +275,9 @@ export function computeLayout(options) {
       '--title-font': mm(titleFontMm),
       '--weekday-font': mm(weekdayFontMm),
       '--date-font': mm(dateFontMm),
+      '--date-font-4': mm(dateFontByWeekCount[4]),
+      '--date-font-5': mm(dateFontByWeekCount[5]),
+      '--date-font-6': mm(dateFontByWeekCount[6]),
       '--holiday-font': mm(holidayFontMm),
       '--notes-column-width': mm(notesColumnWidthMm),
       '--notes-strip-height': mm(notesStripHeightMm),

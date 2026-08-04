@@ -135,10 +135,24 @@ export const HOLIDAY_MODES = {
   all: { label: 'US All', note: 'Federal, common observances and Easter dates' },
 };
 
+/**
+ * Day Size scales the date numbers and nothing else.
+ *
+ * The ratios come from measuring print-a-calendar.com's own rendered sheet:
+ * its date numbers sit at about 0.21 of the cell height on Small and 0.29 on
+ * Big, and its month title and weekday labels are identical between the two.
+ * Hence a label scale of 1 on both.
+ */
 export const DAY_SIZES = {
-  big: { label: 'Big', dateScale: 1.9, labelScale: 1.25 },
+  big: { label: 'Big', dateScale: 1.4, labelScale: 1 },
   small: { label: 'Small', dateScale: 1, labelScale: 1 },
 };
+
+/** Date number height as a fraction of the cell it sits in, at Small. */
+export const DATE_FONT_OVER_CELL_HEIGHT = 0.205;
+
+/** Week counts a month grid can have, used to size type against the real cell. */
+export const POSSIBLE_WEEK_COUNTS = [4, 5, 6];
 
 /**
  * Defaults mirror the task brief: August 2026 through July 2027, Monday-start,

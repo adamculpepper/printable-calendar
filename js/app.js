@@ -67,11 +67,8 @@ function updatePrintRecipe() {
   heading.textContent = 'To save a PDF: ';
 
   const body = document.createTextNode(
-    `press Ctrl+P (Cmd+P on a Mac), choose "Save as PDF", set paper to ${paper.label} (${paper.note}), ` +
-      `orientation to ${options.orientation}, margins to Default and scale to 100%. ` +
-      (options.shadeWeekends
-        ? 'Weekend shading needs "Background graphics" switched on; the grid lines print either way.'
-        : 'Leave "Background graphics" off if you like; the grid lines are borders and print regardless.'),
+    `Ctrl+P, "Save as PDF", paper ${paper.label}, ${options.orientation}, margins Default, scale 100%.` +
+      (options.shadeWeekends ? ' Weekend shading needs "Background graphics" on.' : ''),
   );
 
   elements.recipe.append(heading, body);

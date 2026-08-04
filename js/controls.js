@@ -2,10 +2,11 @@
  * The options panel, and the URL round-trip that makes a configuration
  * shareable.
  *
- * Rows are described declaratively so index.html stays a shell and there is
- * exactly one list to edit when an option is added. Each row can hold more than
- * one control bound to the same option, which is how Year offers both quick
- * buttons and a free-entry field.
+ * The panel is described declaratively so index.html stays a shell and there is
+ * exactly one list to edit when an option is added. A row holds one or two
+ * fields; pairing the narrow ones keeps the sidebar short enough to read
+ * without scrolling. A field can hold more than one control bound to the same
+ * option, which is how Year offers both quick buttons and a free-entry box.
  */
 
 import {
@@ -27,13 +28,76 @@ function toChoices(definitions) {
   }));
 }
 
-const CONTROL_ROWS = [
-  {
+/**
+ * Icons for the two options whose labels do not survive a half-width column.
+ *
+ * Drawn as inline SVG rectangles rather than pulled from an icon font: the app
+ * loads no external assets, and these shapes say what they mean. Orientation is
+ * the shape of the sheet. Day Size is a cell with the date number in its
+ * corner, drawn at the size that option produces.
+ */
+const ICON_SHAPES = {
+  landscape: [{ x: 1.5, y: 4.5, width: 17, height: 11, rx: 1.2 }],
+  portrait: [{ x: 4.5, y: 1.5, width: 11, height: 17, rx: 1.2 }],
+  'day-big': [
+    { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
+    { x: 6.6, y: 5, width: 8.6, height: 8.6, rx: 0.8, filled: true },
+  ],
+  'day-small': [
+    { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
+    { x: 12.1, y: 5, width: 3.1, height: 3.1, rx: 0.4, filled: true },
+  ],
+};
+
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+function createIcon(name) {
+  const shapes = ICON_SHAPES[name];
+
+  if (!shapes) {
+    return null;
+  }
+
+  const svg = document.createElementNS(SVG_NAMESPACE, 'svg');
+  svg.setAttribute('class', 'option-icon');
+  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+
+  for (const shape of shapes) {
+    const rect = document.createElementNS(SVG_NAMESPACE, 'rect');
+    rect.setAttribute('x', String(shape.x));
+    rect.setAttribute('y', String(shape.y));
+    rect.setAttribute('width', String(shape.width));
+    rect.setAttribute('height', String(shape.height));
+    rect.setAttribute('rx', String(shape.rx));
+    rect.setAttribute('fill', shape.filled ? 'currentColor' : 'none');
+
+    if (!shape.filled) {
+      rect.setAttribute('stroke', 'currentColor');
+      rect.setAttribute('stroke-width', '1.5');
+    }
+
+    svg.append(rect);
+  }
+
+  return svg;
+}
+
+const FIELDS = {
+  calendarType: {
     label: 'Calendar Type',
-    controls: [{ type: 'buttons', key: 'calendarType', choices: toChoices(CALENDAR_TYPES) }],
+    controls: [
+      {
+        type: 'select',
+        key: 'calendarType',
+        ariaLabel: 'Calendar type',
+        choices: toChoices(CALENDAR_TYPES),
+      },
+    ],
     describe: (options) => CALENDAR_TYPES[options.calendarType].note,
   },
-  {
+  year: {
     label: 'Year',
     controls: [
       {
@@ -44,7 +108,7 @@ const CONTROL_ROWS = [
       { type: 'number', key: 'startYear', min: 1583, max: 4000, step: 1, ariaLabel: 'Start year' },
     ],
   },
-  {
+  startMonth: {
     label: 'Starting Month',
     controls: [
       {
@@ -55,47 +119,67 @@ const CONTROL_ROWS = [
       },
     ],
   },
-  {
+  monthCount: {
     label: 'Months',
     controls: [
       { type: 'number', key: 'monthCount', min: 1, max: 120, step: 1, ariaLabel: 'Number of months' },
     ],
     describe: (options, result) =>
-      `${options.monthCount} months across ${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
+      `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
   },
-  {
-    label: 'Day Size',
+  paperSize: {
+    label: 'Paper Size',
     controls: [
       {
-        type: 'buttons',
-        key: 'daySize',
-        choices: [
-          { value: 'big', label: 'Big' },
-          { value: 'small', label: 'Small' },
-        ],
+        type: 'select',
+        key: 'paperSize',
+        ariaLabel: 'Paper size',
+        choices: toChoices(PAPER_SIZES),
       },
     ],
-    describe: () => 'Scales the date numbers. The grid fills the sheet either way.',
+    describe: (options) => PAPER_SIZES[options.paperSize].note,
   },
-  {
+  orientation: {
     label: 'Orientation',
     controls: [
       {
         type: 'buttons',
         key: 'orientation',
         choices: [
-          { value: 'landscape', label: 'Landscape' },
-          { value: 'portrait', label: 'Portrait' },
+          { value: 'landscape', label: 'Landscape', icon: 'landscape' },
+          { value: 'portrait', label: 'Portrait', icon: 'portrait' },
         ],
       },
     ],
   },
-  {
-    label: 'Paper Size',
-    controls: [{ type: 'buttons', key: 'paperSize', choices: toChoices(PAPER_SIZES) }],
-    describe: (options) => PAPER_SIZES[options.paperSize].note,
+  daySize: {
+    label: 'Day Size',
+    controls: [
+      {
+        type: 'buttons',
+        key: 'daySize',
+        choices: [
+          { value: 'big', label: 'Big', icon: 'day-big' },
+          { value: 'small', label: 'Small', icon: 'day-small' },
+        ],
+      },
+    ],
+    describe: () => 'Scales the date numbers.',
   },
-  {
+  weekStart: {
+    label: 'Weekday Starts',
+    controls: [
+      {
+        type: 'buttons',
+        key: 'weekStart',
+        choices: [
+          { value: 0, label: 'Sunday' },
+          { value: 1, label: 'Monday' },
+        ],
+      },
+    ],
+  },
+  includeNotes: {
     label: 'Notes',
     controls: [
       {
@@ -114,27 +198,10 @@ const CONTROL_ROWS = [
 
       return CALENDAR_TYPES[options.calendarType].monthsPerPage === 1
         ? 'Ruled column beside the grid.'
-        : 'Ruled strip along the bottom of the sheet.';
+        : 'Ruled strip along the bottom.';
     },
   },
-  {
-    label: 'Weekends',
-    controls: [
-      {
-        type: 'buttons',
-        key: 'shadeWeekends',
-        choices: [
-          { value: false, label: 'Not Shaded' },
-          { value: true, label: 'Shaded' },
-        ],
-      },
-    ],
-    describe: (options) =>
-      options.shadeWeekends
-        ? 'A light tint, kept well clear of the grid color so the lines stay visible. Needs "Background graphics" enabled when printing.'
-        : '',
-  },
-  {
+  gridLines: {
     label: 'Grid Lines',
     controls: [
       {
@@ -147,7 +214,7 @@ const CONTROL_ROWS = [
       },
     ],
   },
-  {
+  gridColor: {
     label: 'Grid Color',
     visibleWhen: (options) => options.gridLines,
     controls: [
@@ -162,20 +229,22 @@ const CONTROL_ROWS = [
       { type: 'color', key: 'gridColor', ariaLabel: 'Custom grid color' },
     ],
   },
-  {
-    label: 'Weekday Starts',
+  shadeWeekends: {
+    label: 'Weekends',
     controls: [
       {
         type: 'buttons',
-        key: 'weekStart',
+        key: 'shadeWeekends',
         choices: [
-          { value: 0, label: 'Sunday' },
-          { value: 1, label: 'Monday' },
+          { value: false, label: 'Not Shaded' },
+          { value: true, label: 'Shaded' },
         ],
       },
     ],
+    describe: (options) =>
+      options.shadeWeekends ? 'Needs "Background graphics" on when printing.' : '',
   },
-  {
+  showAdjacentDays: {
     label: 'Adjacent Days',
     controls: [
       {
@@ -187,15 +256,27 @@ const CONTROL_ROWS = [
         ],
       },
     ],
-    describe: (options) =>
-      options.showAdjacentDays ? 'Grayed-out dates from the neighboring months.' : '',
   },
-  {
+  holidays: {
     label: 'Holidays',
     controls: [{ type: 'buttons', key: 'holidays', choices: toChoices(HOLIDAY_MODES) }],
-    describe: (options) =>
-      options.holidays === 'none' ? '' : 'US holidays only, from the holidate package.',
+    describe: (options) => (options.holidays === 'none' ? '' : 'US only, from holidate.'),
   },
+};
+
+/**
+ * Rows, in panel order. Two fields on a row share it evenly; the narrow options
+ * are paired off so the whole panel stays within a screen.
+ */
+const CONTROL_ROWS = [
+  [FIELDS.calendarType, FIELDS.paperSize],
+  [FIELDS.year],
+  [FIELDS.startMonth, FIELDS.monthCount],
+  [FIELDS.orientation, FIELDS.daySize],
+  [FIELDS.weekStart, FIELDS.includeNotes],
+  [FIELDS.gridLines, FIELDS.gridColor],
+  [FIELDS.shadeWeekends, FIELDS.showAdjacentDays],
+  [FIELDS.holidays],
 ];
 
 /**
@@ -253,7 +334,7 @@ function coerce(key, rawValue) {
   return undefined;
 }
 
-/** Merges any recognised query parameters over the defaults. */
+/** Merges any recognized query parameters over the defaults. */
 export function readOptionsFromUrl(search = window.location.search) {
   const parameters = new URLSearchParams(search);
   const options = { ...DEFAULT_OPTIONS };
@@ -302,9 +383,18 @@ function toControlId(control, choiceValue) {
   return `${control.key}|${control.type}|${choiceValue ?? ''}`;
 }
 
+/**
+ * Short option sets render as one segmented control rather than loose pills:
+ * two or three mutually exclusive choices read better joined, and the group
+ * fills its column instead of leaving a ragged edge.
+ */
+const MAXIMUM_SEGMENTED_CHOICES = 3;
+
 function createButtonGroup(control, options, onChange, labelId) {
   const group = document.createElement('div');
-  group.className = 'control-options';
+  group.className = control.choices.length <= MAXIMUM_SEGMENTED_CHOICES
+    ? 'option-group is-segmented'
+    : 'option-group';
   group.setAttribute('role', 'group');
   group.setAttribute('aria-labelledby', labelId);
 
@@ -312,9 +402,24 @@ function createButtonGroup(control, options, onChange, labelId) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'option-button';
-    button.textContent = choice.label;
     button.dataset.controlId = toControlId(control, choice.value);
     button.setAttribute('aria-pressed', String(options[control.key] === choice.value));
+
+    const icon = choice.icon ? createIcon(choice.icon) : null;
+
+    if (icon) {
+      button.classList.add('has-icon');
+      // The label can be visually hidden in a narrow column, so the title
+      // keeps it reachable by pointer and the text keeps it in the a11y tree.
+      button.title = choice.label;
+      button.append(icon);
+    }
+
+    const text = document.createElement('span');
+    text.className = 'option-button-text';
+    text.textContent = choice.label;
+    button.append(text);
+
     button.addEventListener('click', () => onChange(control.key, choice.value));
     group.append(button);
   }
@@ -436,6 +541,38 @@ function restoreFocus(container, captured) {
   }
 }
 
+function renderField(field, fieldId, options, result, onChange) {
+  const fieldElement = document.createElement('div');
+  fieldElement.className = 'control-field';
+
+  const labelId = `${fieldId}-label`;
+  const label = document.createElement('div');
+  label.className = 'control-label';
+  label.id = labelId;
+  label.textContent = field.label;
+  fieldElement.append(label);
+
+  const controlsCell = document.createElement('div');
+  controlsCell.className = 'control-controls';
+
+  for (const control of field.controls) {
+    controlsCell.append(CONTROL_BUILDERS[control.type](control, options, onChange, labelId));
+  }
+
+  fieldElement.append(controlsCell);
+
+  const note = field.describe?.(options, result);
+
+  if (note) {
+    const noteElement = document.createElement('p');
+    noteElement.className = 'control-note';
+    noteElement.textContent = note;
+    fieldElement.append(noteElement);
+  }
+
+  return fieldElement;
+}
+
 /**
  * Rebuilds the panel from scratch on every change. The panel is a couple of
  * dozen nodes, so the simplicity of a full redraw beats diffing, and it removes
@@ -448,37 +585,25 @@ export function renderControls(container, options, result, onChange) {
   const fragment = document.createDocumentFragment();
 
   CONTROL_ROWS.forEach((row, rowIndex) => {
-    if (row.visibleWhen && !row.visibleWhen(options)) {
+    const visibleFields = row.filter((field) => !field.visibleWhen || field.visibleWhen(options));
+
+    if (!visibleFields.length) {
       return;
     }
 
     const rowElement = document.createElement('div');
     rowElement.className = 'control-row';
 
-    const labelId = `control-label-${rowIndex}`;
-    const label = document.createElement('div');
-    label.className = 'control-label';
-    label.id = labelId;
-    label.textContent = row.label;
-    rowElement.append(label);
-
-    const controlsCell = document.createElement('div');
-    controlsCell.className = 'control-options';
-
-    for (const control of row.controls) {
-      controlsCell.append(CONTROL_BUILDERS[control.type](control, options, onChange, labelId));
+    // A row whose partner field is hidden gives its whole width to the survivor.
+    if (visibleFields.length > 1) {
+      rowElement.classList.add('is-split');
     }
 
-    rowElement.append(controlsCell);
-
-    const note = row.describe?.(options, result);
-
-    if (note) {
-      const noteElement = document.createElement('p');
-      noteElement.className = 'control-note';
-      noteElement.textContent = note;
-      rowElement.append(noteElement);
-    }
+    visibleFields.forEach((field, fieldIndex) => {
+      rowElement.append(
+        renderField(field, `control-${rowIndex}-${fieldIndex}`, options, result, onChange),
+      );
+    });
 
     fragment.append(rowElement);
   });
