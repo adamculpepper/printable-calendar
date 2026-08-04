@@ -40,6 +40,11 @@ function toChoices(definitions) {
 const ICON_SHAPES = {
   landscape: [{ x: 1.5, y: 4.5, width: 17, height: 11, rx: 1.2 }],
   portrait: [{ x: 4.5, y: 1.5, width: 11, height: 17, rx: 1.2 }],
+  warning: [
+    { path: 'M10 3.4 L18.3 17.6 H1.7 Z' },
+    { path: 'M10 8.4 V12.4' },
+    { path: 'M10 15.1 h0.01' },
+  ],
   'day-big': [
     { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
     { x: 6.6, y: 5, width: 8.6, height: 8.6, rx: 0.8, filled: true },
@@ -56,7 +61,7 @@ const ICON_SHAPES = {
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
-function createIcon(name) {
+function createIcon(name, className = 'option-icon') {
   const shapes = ICON_SHAPES[name];
 
   if (!shapes) {
@@ -64,12 +69,24 @@ function createIcon(name) {
   }
 
   const svg = document.createElementNS(SVG_NAMESPACE, 'svg');
-  svg.setAttribute('class', 'option-icon');
+  svg.setAttribute('class', className);
   svg.setAttribute('viewBox', '0 0 20 20');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('focusable', 'false');
 
   for (const shape of shapes) {
+    if (shape.path) {
+      const path = document.createElementNS(SVG_NAMESPACE, 'path');
+      path.setAttribute('d', shape.path);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', 'currentColor');
+      path.setAttribute('stroke-width', '1.6');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.append(path);
+      continue;
+    }
+
     const rect = document.createElementNS(SVG_NAMESPACE, 'rect');
     rect.setAttribute('x', String(shape.x));
     rect.setAttribute('y', String(shape.y));
@@ -125,11 +142,17 @@ const FIELDS = {
     ],
   },
   monthCount: {
-    label: 'Months',
-    labelHint: (options, result) =>
-      `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
+    label: 'Months to Print',
     controls: [
-      { type: 'number', key: 'monthCount', min: 1, max: 120, step: 1, ariaLabel: 'Number of months' },
+      {
+        type: 'number',
+        key: 'monthCount',
+        min: 1,
+        max: 120,
+        step: 1,
+        ariaLabel: 'Number of months',
+        addon: (options, result) => (result.pageCount === 1 ? 'page' : 'pages'),
+      },
     ],
   },
   paperSize: {
@@ -239,6 +262,13 @@ const FIELDS = {
   },
   shadeWeekends: {
     label: 'Weekends Shaded',
+    // Shading is the one thing on the sheet that will not print unless a box is
+    // ticked in the print dialog, so the label carries a mark when it is on and
+    // the detail lives in the notice under the instructions.
+    labelIcon: (options) =>
+      options.shadeWeekends
+        ? { name: 'warning', title: 'Needs "Background graphics" enabled in the print dialog' }
+        : null,
     controls: [
       {
         type: 'buttons',
@@ -249,8 +279,6 @@ const FIELDS = {
         ],
       },
     ],
-    describe: (options) =>
-      options.shadeWeekends ? 'Needs "Background graphics" on when printing.' : '',
   },
   showAdjacentDays: {
     label: 'Adjacent Days',
@@ -267,6 +295,10 @@ const FIELDS = {
   },
   holidays: {
     label: 'Holidays',
+    labelIcon: (options) =>
+      options.holidays === 'none'
+        ? null
+        : { name: 'warning', title: 'Needs "Background graphics" enabled in the print dialog' },
     controls: [{ type: 'buttons', key: 'holidays', choices: toChoices(HOLIDAY_MODES) }],
     describe: (options) => (options.holidays === 'none' ? '' : 'US only, from holidate.'),
   },
@@ -456,7 +488,7 @@ function createSelect(control, { options, onChange, disabled }) {
   return select;
 }
 
-function createNumberInput(control, { options, onChange, disabled }) {
+function createNumberInput(control, { options, result, onChange, disabled }) {
   const input = document.createElement('input');
   input.type = 'number';
   input.className = 'control-number';
@@ -482,7 +514,24 @@ function createNumberInput(control, { options, onChange, disabled }) {
     onChange(control.key, accepted);
   });
 
-  return input;
+  if (!control.addon) {
+    return input;
+  }
+
+  /*
+   * Joined to a read-only addon, so the consequence of the number sits against
+   * the number itself rather than floating somewhere else in the field.
+   */
+  const group = document.createElement('div');
+  group.className = 'input-group';
+
+  const addon = document.createElement('span');
+  addon.className = 'input-group-addon';
+  addon.textContent = control.addon(options, result);
+
+  group.append(input, addon);
+
+  return group;
 }
 
 function createColorInput(control, { options, onChange, disabled }) {
@@ -570,17 +619,24 @@ function renderField(field, fieldId, options, result, onChange) {
   labelRow.append(label);
 
   /*
-   * Read-only text that annotates the label, such as how many pages the current
-   * month count produces. It sits outside the labelled element on purpose, so
-   * it does not end up inside the accessible name of the controls below.
+   * A mark on the label for a setting that needs something done in the print
+   * dialog. It sits outside the labelled element on purpose, so it does not end
+   * up inside the accessible name of the controls below it.
    */
-  const labelHint = field.labelHint?.(options, result);
+  const labelIcon = field.labelIcon?.(options);
 
-  if (labelHint) {
-    const hint = document.createElement('span');
-    hint.className = 'control-label-hint';
-    hint.textContent = labelHint;
-    labelRow.append(hint);
+  if (labelIcon) {
+    const marker = document.createElement('span');
+    marker.className = 'control-label-warning';
+    marker.title = labelIcon.title;
+    marker.append(createIcon(labelIcon.name, 'control-label-warning-icon'));
+
+    const description = document.createElement('span');
+    description.className = 'visually-hidden';
+    description.textContent = labelIcon.title;
+    marker.append(description);
+
+    labelRow.append(marker);
   }
 
   fieldElement.append(labelRow);

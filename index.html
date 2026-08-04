@@ -44,7 +44,14 @@
       <p class="actions-note">The download is one self-contained file with no scripts in it.</p>
     </div>
 
-    <p class="print-recipe" id="print-recipe"></p>
+    <section class="instructions" aria-labelledby="instructions-title">
+      <h3 class="instructions-title" id="instructions-title">Instructions</h3>
+      <p class="instructions-lead" id="instructions-lead"></p>
+      <dl class="instructions-list" id="instructions-list"></dl>
+    </section>
+
+    <!-- Only present when an option needs something set in the print dialog. -->
+    <div class="notice" id="print-notice" role="note" hidden></div>
   </aside>
 
 </main>

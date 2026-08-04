@@ -16,7 +16,9 @@ const elements = {
   pages: document.getElementById('calendar-pages'),
   controls: document.getElementById('controls'),
   summary: document.getElementById('preview-summary'),
-  recipe: document.getElementById('print-recipe'),
+  instructionsLead: document.getElementById('instructions-lead'),
+  instructionsList: document.getElementById('instructions-list'),
+  notice: document.getElementById('print-notice'),
   pageStyle: document.getElementById('page-style'),
   previewStyle: document.getElementById('preview-style'),
   previewFrame: document.getElementById('preview-frame'),
@@ -58,20 +60,112 @@ function updateSummary(result) {
   elements.summary.append(count, document.createTextNode(' · '), detail);
 }
 
-function updatePrintRecipe() {
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+/** Matches the print dialog's own wording so the two can be read side by side. */
+function buildInstructionRows() {
   const paper = PAPER_SIZES[options.paperSize];
 
-  elements.recipe.replaceChildren();
+  return [
+    ['Destination', 'Save as PDF'],
+    ['Paper size', `${paper.label} (${paper.note})`],
+    ['Layout', options.orientation === 'landscape' ? 'Landscape' : 'Portrait'],
+    ['Margins', 'Default'],
+    ['Scale', '100%'],
+  ];
+}
+
+function updateInstructions() {
+  const isMac = /Mac|iPhone|iPad/.test(navigator.userAgent);
+
+  elements.instructionsLead.replaceChildren();
+  elements.instructionsLead.append(document.createTextNode('Press '));
+
+  for (const key of isMac ? ['Cmd', 'P'] : ['Ctrl', 'P']) {
+    if (elements.instructionsLead.childNodes.length > 1) {
+      elements.instructionsLead.append(document.createTextNode(' + '));
+    }
+
+    const keyElement = document.createElement('kbd');
+    keyElement.textContent = key;
+    elements.instructionsLead.append(keyElement);
+  }
+
+  elements.instructionsLead.append(document.createTextNode(', then match these settings.'));
+
+  const list = document.createDocumentFragment();
+
+  for (const [setting, value] of buildInstructionRows()) {
+    const term = document.createElement('dt');
+    term.textContent = setting;
+
+    const definition = document.createElement('dd');
+    definition.textContent = value;
+
+    list.append(term, definition);
+  }
+
+  elements.instructionsList.replaceChildren(list);
+}
+
+/**
+ * Everything on the sheet is drawn with borders and text except two things:
+ * weekend shading and the disc behind a holiday date. Chrome leaves background
+ * graphics off by default, so whichever of those is switched on gets a notice
+ * rather than a line of prose nobody reads.
+ */
+function listBackgroundDependentFeatures() {
+  const features = [];
+
+  if (options.shadeWeekends) {
+    features.push('weekend shading');
+  }
+
+  if (options.holidays !== 'none') {
+    features.push('holiday markers');
+  }
+
+  return features;
+}
+
+function updateNotice() {
+  const features = listBackgroundDependentFeatures();
+
+  if (!features.length) {
+    elements.notice.hidden = true;
+    elements.notice.replaceChildren();
+    return;
+  }
+
+  const icon = document.createElementNS(SVG_NAMESPACE, 'svg');
+  icon.setAttribute('class', 'notice-icon');
+  icon.setAttribute('viewBox', '0 0 20 20');
+  icon.setAttribute('aria-hidden', 'true');
+
+  for (const shape of ['M10 3.4 L18.3 17.6 H1.7 Z', 'M10 8.4 V12.4', 'M10 15.1 h0.01']) {
+    const path = document.createElementNS(SVG_NAMESPACE, 'path');
+    path.setAttribute('d', shape);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.6');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    icon.append(path);
+  }
+
+  const message = document.createElement('p');
+  message.className = 'notice-message';
 
   const heading = document.createElement('strong');
-  heading.textContent = 'To save a PDF: ';
+  heading.textContent = 'Turn on Background graphics';
 
-  const body = document.createTextNode(
-    `Ctrl+P, "Save as PDF", paper ${paper.label}, ${options.orientation}, margins Default, scale 100%.` +
-      (options.shadeWeekends ? ' Weekend shading needs "Background graphics" on.' : ''),
+  message.append(
+    heading,
+    document.createTextNode(` under More settings, or ${features.join(' and ')} won't print.`),
   );
 
-  elements.recipe.append(heading, body);
+  elements.notice.replaceChildren(icon, message);
+  elements.notice.hidden = false;
 }
 
 /**
@@ -100,7 +194,8 @@ function update() {
 
   renderControls(elements.controls, options, result, handleOptionChange);
   updateSummary(result);
-  updatePrintRecipe();
+  updateInstructions();
+  updateNotice();
   updatePreviewZoom();
   writeOptionsToUrl(options);
 }
