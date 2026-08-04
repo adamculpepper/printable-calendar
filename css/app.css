@@ -791,10 +791,12 @@ kbd {
 }
 
 .about-title {
-  margin: 0 0 10px;
-  font-size: 14px;
+  margin: 0 0 9px;
+  color: var(--ink-soft);
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /*
@@ -807,13 +809,17 @@ kbd {
   gap: 10px 32px;
 }
 
+/*
+ * --ink-faint is the lightest ink in the palette and was set to clear 4.5:1 on
+ * both surfaces, so this is as dim as body text can go and still be readable.
+ */
 .about-columns p {
   flex: 1 1 260px;
   min-width: 0;
   margin: 0;
-  color: var(--ink-soft);
-  font-size: 12.5px;
-  line-height: 1.55;
+  color: var(--ink-faint);
+  font-size: 11.5px;
+  line-height: 1.5;
 }
 
 .about-link {
@@ -823,8 +829,8 @@ kbd {
 
 .about code {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 12.5px;
-  color: var(--ink);
+  font-size: 11px;
+  color: var(--ink-soft);
 }
 
 .visually-hidden {
