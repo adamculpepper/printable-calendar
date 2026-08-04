@@ -148,12 +148,28 @@ body {
   min-width: 0;
 }
 
+.control-label-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
 .control-label {
   color: var(--ink-soft);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.02em;
+}
+
+/* Annotates the label, such as the page count beside Months. */
+.control-label-hint {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 /*
@@ -169,12 +185,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Read-only text sitting beside a control, such as the page count. */
-.control-hint {
-  color: var(--ink-faint);
-  font-size: 12px;
-  line-height: 1.3;
-}
 
 /* The row of controls belonging to one field: usually a single group, but Year
    and Grid Color pair a group with a free-entry box beside it. */

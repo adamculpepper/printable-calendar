@@ -126,13 +126,10 @@ const FIELDS = {
   },
   monthCount: {
     label: 'Months',
+    labelHint: (options, result) =>
+      `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
     controls: [
       { type: 'number', key: 'monthCount', min: 1, max: 120, step: 1, ariaLabel: 'Number of months' },
-      {
-        type: 'hint',
-        text: (options, result) =>
-          `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'}`,
-      },
     ],
   },
   paperSize: {
@@ -507,20 +504,11 @@ function createColorInput(control, { options, onChange, disabled }) {
   return input;
 }
 
-/** Read-only text that belongs beside a control rather than under the field. */
-function createHint(control, { options, result }) {
-  const hint = document.createElement('span');
-  hint.className = 'control-hint';
-  hint.textContent = control.text(options, result);
-  return hint;
-}
-
 const CONTROL_BUILDERS = {
   buttons: createButtonGroup,
   select: createSelect,
   number: createNumberInput,
   color: createColorInput,
-  hint: createHint,
 };
 
 /**
@@ -572,11 +560,30 @@ function renderField(field, fieldId, options, result, onChange) {
   fieldElement.className = disabled ? 'control-field is-disabled' : 'control-field';
 
   const labelId = `${fieldId}-label`;
+  const labelRow = document.createElement('div');
+  labelRow.className = 'control-label-row';
+
   const label = document.createElement('div');
   label.className = 'control-label';
   label.id = labelId;
   label.textContent = field.label;
-  fieldElement.append(label);
+  labelRow.append(label);
+
+  /*
+   * Read-only text that annotates the label, such as how many pages the current
+   * month count produces. It sits outside the labelled element on purpose, so
+   * it does not end up inside the accessible name of the controls below.
+   */
+  const labelHint = field.labelHint?.(options, result);
+
+  if (labelHint) {
+    const hint = document.createElement('span');
+    hint.className = 'control-label-hint';
+    hint.textContent = labelHint;
+    labelRow.append(hint);
+  }
+
+  fieldElement.append(labelRow);
 
   const controlsCell = document.createElement('div');
   controlsCell.className = 'control-controls';
