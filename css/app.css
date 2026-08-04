@@ -21,10 +21,16 @@
   --accent-strong: #931c15;
   --accent-ink: #ffffff;
   --focus: #2a6df4;
-  --warning-surface: #fdf5e6;
-  --warning-rule: #ecd9ae;
-  --warning-ink: #96650c;
-  --warning-text: #6b4a09;
+  /*
+   * The notice reads in the accent's family rather than amber, so the one
+   * warning on the page belongs to the same palette as the buttons. The icon
+   * runs lighter than the text it sits beside: it is a marker, not the message.
+   */
+  --warning-surface: #fdf4f3;
+  --warning-rule: #f0d7d4;
+  --warning-icon: #c96760;
+  --warning-ink: #8e2f28;
+  --warning-text: #6f3a36;
   --radius: 6px;
 }
 
@@ -54,7 +60,57 @@ body {
   flex: none;
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
-  padding: 18px 28px;
+  padding: 16px 28px;
+}
+
+/* Matches the shell's own measure, so the title and the repo link sit on the
+   same left and right edges as the content below them. */
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.app-identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.repo-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 90ms ease, border-color 90ms ease;
+}
+
+.repo-link:hover {
+  background: #ececed;
+  border-color: #d5d5da;
+}
+
+.repo-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.repo-icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  fill: currentColor;
 }
 
 .app-title {
@@ -278,7 +334,7 @@ body {
 }
 
 .control-label-marker.is-warning {
-  color: var(--warning-ink);
+  color: var(--warning-icon);
 }
 
 .control-label-marker.is-info {
@@ -768,7 +824,7 @@ kbd {
   display: inline-block;
   vertical-align: -2px;
   margin-right: 6px;
-  color: var(--warning-ink);
+  color: var(--warning-icon);
 }
 
 .notice strong {

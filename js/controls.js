@@ -58,12 +58,19 @@ const ICON_SHAPES = {
    * size loses the mark entirely at the 14px the label uses, and the hole keeps
    * it legible on the white card and the amber notice alike.
    */
+  /*
+   * Solid, with the exclamation knocked out of it. A stroked outline of this
+   * shape loses the mark at the 14px the labels use, and a hole keeps it legible
+   * on any surface. The three points are carried through their corners on a
+   * quadratic, which softens them well past what a corner radius would give.
+   */
   warning: [
     {
       fillPath:
-        'M9.14 2.6 a1 1 0 0 1 1.72 0 l8.05 14.2 a1 1 0 0 1 -0.86 1.5 H1.95 a1 1 0 0 1 -0.86 -1.5 Z ' +
-        'M9.1 7.3 h1.8 v5.1 h-1.8 Z ' +
-        'M9.1 14 h1.8 v1.8 h-1.8 Z',
+        'M11.45 5.22 L16.75 14.78 Q18.2 17.4 15.2 17.4 L4.8 17.4 Q1.8 17.4 3.25 14.78 ' +
+        'L8.55 5.22 Q10 2.6 11.45 5.22 Z ' +
+        'M9.1 8.5 A0.9 0.9 0 0 1 10.9 8.5 V11.7 A0.9 0.9 0 0 1 9.1 11.7 Z ' +
+        'M9 15.05 A1 1 0 0 1 11 15.05 A1 1 0 0 1 9 15.05 Z',
       fillRule: 'evenodd',
     },
   ],
