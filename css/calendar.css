@@ -1,0 +1,313 @@
+/*
+ * The printed artifact.
+ *
+ * Every dimension here resolves to a millimeter value computed in layout.js and
+ * injected as a custom property. Nothing is sized against the viewport, because
+ * in a print context the viewport is not the page.
+ *
+ * Screen rules approximate the sheet so the result is reviewable in the
+ * browser; the @media print block at the bottom is the source of truth.
+ *
+ * This file has to stand on its own. The Download HTML export ships it without
+ * css/app.css, so it cannot lean on the app shell for anything, starting with
+ * the box model: a grid with an explicit height and a border on it lays out a
+ * hairline too tall under content-box, and one stray pixel per row of month
+ * blocks is enough to push a sheet onto a second page.
+ */
+
+.calendar-pages,
+.calendar-pages *,
+.calendar-pages *::before,
+.calendar-pages *::after {
+  box-sizing: border-box;
+}
+
+.calendar-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.page {
+  box-sizing: border-box;
+  width: var(--printable-width);
+  height: var(--printable-height);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+
+  /* Keeps a sheet whole rather than letting it split across two pages. */
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.page-inner {
+  display: flex;
+  height: var(--body-height);
+}
+
+/*
+ * The arrangement of month blocks on one sheet. A monthly calendar is the
+ * degenerate 1x1 case, which is why one layout engine covers all five
+ * calendar types.
+ */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--month-columns), 1fr);
+  grid-template-rows: repeat(var(--month-rows), 1fr);
+  gap: var(--gutter);
+  width: var(--body-width);
+  height: var(--body-height);
+}
+
+.month {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.month-title {
+  height: var(--title-height);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3em;
+  font-size: var(--title-font);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.month-year {
+  font-weight: 400;
+  color: #5a5a5a;
+}
+
+/*
+ * Wrappers that exist only to give the accessibility tree a table to walk:
+ * a table element around the header and the weeks, and a row element around
+ * each set of seven cells. `display: contents` keeps them out of the box tree
+ * entirely, so the weekday strip stays a flex child of .month and the day cells
+ * stay grid items of .day-grid. The printed geometry is unchanged.
+ */
+.month-table,
+.week {
+  display: contents;
+}
+
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: var(--weekday-row-height);
+  align-items: end;
+  font-size: var(--weekday-font);
+  font-weight: 600;
+  color: #454545;
+  letter-spacing: 0.02em;
+}
+
+.weekday-label {
+  padding: 0 var(--cell-padding) calc(var(--cell-padding) * 0.6);
+  text-decoration: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/*
+ * The grid gets an explicit height and equal-height rows. A five-row month
+ * therefore stretches to the same bottom edge as a six-row month, with taller
+ * cells. That is intended: the sheet always fills to the bottom margin.
+ */
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  height: var(--day-grid-height);
+
+  /*
+   * Grid lines are borders, never background fills, so they survive with
+   * "Background graphics" switched off in the print dialog. The container
+   * supplies the top and left edges and each cell supplies its right and
+   * bottom, which draws a complete box with no doubled-up hairlines.
+   */
+  border-top: var(--grid-line-width) solid var(--grid-color);
+  border-left: var(--grid-line-width) solid var(--grid-color);
+}
+
+.day-cell {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--cell-padding);
+  border-right: var(--grid-line-width) solid var(--grid-color);
+  border-bottom: var(--grid-line-width) solid var(--grid-color);
+}
+
+/*
+ * Weekend shading is the one thing on the page that is a background fill, so it
+ * only appears when "Background graphics" is enabled in the print dialog. The
+ * tint is deliberately far lighter than the grid color: a mid-gray fill hides
+ * a mid-gray hairline, and the grid has to stay readable through the shading.
+ *
+ * Deliberately no print-color-adjust here. Forcing the fill would override the
+ * dialog's own checkbox, and the app tells the user that checkbox controls the
+ * shading, so it has to actually control it.
+ */
+.day-cell.is-weekend {
+  background-color: var(--weekend-shade);
+}
+
+.day-number {
+  font-size: var(--date-font);
+  line-height: 1;
+  font-weight: 500;
+}
+
+.day-cell.is-adjacent .day-number {
+  color: #a8a8a8;
+  font-weight: 400;
+}
+
+.day-cell.is-holiday .day-number {
+  font-weight: 700;
+}
+
+/*
+ * Capped at two lines. A long name is allowed to wrap once, but never to grow
+ * far enough to eat the writing space the cell exists to provide.
+ */
+.day-holiday {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  margin-top: calc(var(--cell-padding) * 0.6);
+  font-size: var(--holiday-font);
+  line-height: 1.15;
+  text-align: right;
+  color: #3d3d3d;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/*
+ * Used where a cell is too narrow to spell the holiday out. An outlined ring
+ * rather than a filled dot, so it prints without background graphics.
+ */
+.day-holiday-marker {
+  box-sizing: border-box;
+  width: calc(var(--holiday-font) * 0.62);
+  height: calc(var(--holiday-font) * 0.62);
+  margin-top: calc(var(--cell-padding) * 0.5);
+  border: 0.25mm solid #444;
+  border-radius: 50%;
+}
+
+/* Notes ---------------------------------------------------------------- */
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.notes-column {
+  width: var(--notes-column-width);
+  height: var(--body-height);
+  margin-left: var(--notes-gap);
+}
+
+.notes-strip {
+  height: var(--notes-strip-height);
+  margin-top: var(--notes-gap);
+}
+
+.notes-title {
+  margin: 0 0 calc(var(--cell-padding) * 1.5);
+  font-size: var(--weekday-font);
+  font-weight: 600;
+  color: #454545;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.notes-strip .notes-title {
+  margin-bottom: calc(var(--cell-padding) * 0.8);
+}
+
+.notes-lines {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.notes-line {
+  height: var(--notes-line-height);
+  border-bottom: var(--notes-rule-width) solid var(--notes-rule-color);
+}
+
+/*
+ * Carries the holiday name for assistive technology in layouts too dense to
+ * print it. A title attribute alone is neither keyboard reachable nor reliably
+ * announced, and it never prints.
+ */
+.calendar-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Screen preview -------------------------------------------------------- */
+
+@media screen {
+  .page {
+    zoom: var(--preview-zoom, 1);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 18%), 0 10px 30px rgb(0 0 0 / 12%);
+  }
+}
+
+/* Print ----------------------------------------------------------------- */
+
+@media print {
+  /*
+   * The stacking used for the screen preview has to come off, and it has to
+   * come off here rather than in the app stylesheet: the exported file ships
+   * this sheet alone, and a residual flex gap between sheets would push the
+   * last one onto an extra page.
+   */
+  .calendar-pages {
+    display: block;
+    gap: 0;
+  }
+
+  .page {
+    zoom: 1;
+    box-shadow: none;
+    margin: 0;
+  }
+
+  /*
+   * Only the sheets between pages force a break. The final sheet must not, or
+   * the print engine emits an empty trailing page.
+   */
+  .page:not(:last-of-type) {
+    break-after: page;
+    page-break-after: always;
+  }
+}

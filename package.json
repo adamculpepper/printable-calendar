@@ -1,0 +1,20 @@
+{
+  "name": "printable-calendar",
+  "version": "1.0.0",
+  "description": "A printable calendar generator that prints clean, brandless PDFs straight from the browser.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "browser-sync start --server --files \"index.html, css/*.css, js/*.js\" --no-notify",
+    "vendor": "node scripts/vendor-holidate.mjs",
+    "verify": "node scripts/verify-print.mjs",
+    "verify:full": "node scripts/verify-print.mjs --full"
+  },
+  "dependencies": {
+    "holidate": "0.0.8-alpha"
+  },
+  "devDependencies": {
+    "browser-sync": "^3.0.2",
+    "pdf-lib": "^1.17.1"
+  }
+}

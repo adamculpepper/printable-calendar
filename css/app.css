@@ -1,0 +1,359 @@
+/*
+ * Screen chrome for the generator: the options panel and the preview frame.
+ *
+ * None of this reaches paper. The whole shell is hidden in the print block at
+ * the bottom of the file so that what comes out of the printer is the calendar
+ * and nothing else.
+ */
+
+:root {
+  --ink: #16161a;
+  --ink-soft: #5c5c66;
+  /* Contrast floor: this is the lightest ink used, and it sits on both the
+     white panel and the sunken body, so it has to clear 4.5:1 on the darker
+     of the two. */
+  --ink-faint: #6e6e78;
+  --rule: #e2e2e6;
+  --surface: #ffffff;
+  --surface-sunken: #f1f1f3;
+  --surface-raised: #fafafb;
+  --accent: #b3271f;
+  --accent-ink: #ffffff;
+  --focus: #2a6df4;
+  --radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 28px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.app-tagline {
+  margin: 3px 0 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: 28px;
+  align-items: start;
+  padding: 28px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Preview --------------------------------------------------------------- */
+
+.preview {
+  min-width: 0;
+}
+
+.preview-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin-bottom: 16px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.preview-count {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.preview-hint {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+}
+
+.preview-frame {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+/* Controls -------------------------------------------------------------- */
+
+.controls {
+  position: sticky;
+  top: 28px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 6px 20px 20px;
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 10px 14px;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.control-row:last-of-type {
+  border-bottom: 0;
+}
+
+.control-label {
+  padding-top: 5px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.control-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.option-button {
+  appearance: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  padding: 6px 11px;
+  cursor: pointer;
+  transition: background-color 90ms ease, color 90ms ease, border-color 90ms ease;
+}
+
+.option-button:hover {
+  background: #ececed;
+  color: var(--ink);
+}
+
+.option-button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.option-button:focus-visible,
+.control-select:focus-visible,
+.control-number:focus-visible,
+.control-color:focus-visible,
+.action-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.control-select,
+.control-number {
+  appearance: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+.control-select {
+  min-width: 130px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: right 12px center, right 7px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 26px;
+}
+
+.control-number {
+  width: 78px;
+}
+
+.control-color {
+  width: 34px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+
+.control-note {
+  grid-column: 2;
+  margin: -2px 0 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.control-row[hidden] {
+  display: none;
+}
+
+/* Actions --------------------------------------------------------------- */
+
+.actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.action-button {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: background-color 90ms ease;
+}
+
+.action-button.is-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.action-button.is-primary:hover {
+  background: #9c211a;
+}
+
+.action-button.is-secondary {
+  background: var(--surface-raised);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.action-button.is-secondary:hover {
+  background: #ececed;
+}
+
+.actions-note {
+  margin: 2px 0 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.print-recipe {
+  margin: 14px 0 0;
+  padding: 11px 13px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.print-recipe strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 1060px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .controls {
+    position: static;
+    order: -1;
+  }
+}
+
+@media screen and (max-width: 560px) {
+  .app-shell,
+  .app-header {
+    padding: 16px;
+  }
+
+  .control-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .control-label {
+    text-align: left;
+    padding-top: 0;
+  }
+
+  .control-note {
+    grid-column: 1;
+  }
+}
+
+/*
+ * Print: everything but the sheets disappears, and the page background goes
+ * white so no shell color bleeds into the output.
+ */
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .app-header,
+  .controls,
+  .preview-bar {
+    display: none;
+  }
+
+  .app-shell {
+    display: block;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+
+  .preview,
+  .preview-frame {
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* The sheets themselves are reset for print in css/calendar.css, which is
+     the sheet the Download HTML export carries. */
+}
