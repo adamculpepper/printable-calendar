@@ -4,8 +4,8 @@ A calendar generator that produces clean PDFs from the browser's own print dialo
 printed except the calendar itself: no watermark, no site name down in the corner. Just the grid
 and as much blank writing space per day as the paper allows.
 
-It is a static site with no build step and no framework. The only thing it ever fetches is a font,
-and only if you pick one; leave the type on System and it touches the network never. Open
+It is a static site with no build step and no framework. Two things reach the network: a font, if
+you pick one other than System, and Google Analytics. Neither of them affects what prints. Open
 `index.html` from a local server and everything works.
 
 ## Quick start
@@ -199,6 +199,7 @@ path.
 index.html                    markup shell
 css/app.css                   the options panel, screen only
 css/calendar.css              the printed artifact, screen preview and print
+js/analytics.js               Google Analytics config, loaded as a classic script
 js/config.js                  paper sizes, calendar types, defaults
 js/date-utils.js              month grids, week starts, leap years, rollover
 js/holidays.js                adapter over vendored holidate, date-keyed lookups

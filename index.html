@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Printable Calendar</title>
 <meta name="description" content="Build a printable calendar and save it as a PDF from the browser. No branding on the page, maximum writing space per day.">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WXB7ZH58X5"></script>
+<script src="js/analytics.js"></script>
+
 <link rel="stylesheet" href="css/app.css">
 <!-- Tagged with an id so the download can lift these rules into a standalone file. -->
 <link rel="stylesheet" href="css/calendar.css" id="calendar-stylesheet">
@@ -114,9 +118,10 @@
       <p>
         Type is set in the system fonts unless you pick something else, in which case the page
         loads it from
-        <a class="about-link" href="https://fonts.google.com" rel="noopener noreferrer" target="_blank">Google Fonts</a>.
-        That is the only thing here that reaches the network. If it cannot, the calendar falls back
-        to the system fonts and prints the same as it always did.
+        <a class="about-link" href="https://fonts.google.com" rel="noopener noreferrer" target="_blank">Google Fonts</a>;
+        if it cannot, the calendar falls back to the system fonts and prints the same as it always
+        did. Page views go to Google Analytics. Those are the only two things here that reach the
+        network, and neither of them ends up on the paper.
       </p>
       </div>
     </section>
