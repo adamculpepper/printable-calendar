@@ -37,7 +37,7 @@
   flex-direction: column;
   background: #fff;
   color: #111;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--body-family);
   font-variant-numeric: tabular-nums lining-nums;
 
   /* Keeps a sheet whole rather than letting it split across two pages. */
@@ -76,6 +76,7 @@
 .month-title {
   height: var(--title-height);
   margin: 0;
+  font-family: var(--title-family);
   display: flex;
   align-items: baseline;
   gap: 0.3em;

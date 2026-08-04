@@ -16,10 +16,11 @@
 import {
   CALENDAR_TYPES,
   DATE_FONT_OVER_CELL_HEIGHT,
-  DAY_SIZES,
+  FONT_FAMILIES,
   PAGE_HEIGHT_SAFETY_MM,
   POSSIBLE_WEEK_COUNTS,
   applyOrientation,
+  getSizeScale,
 } from './config.js';
 
 function clamp(value, minimum, maximum) {
@@ -88,8 +89,20 @@ export function resolveWeekendShade(gridColor) {
 export function computeLayout(options) {
   const calendarType = CALENDAR_TYPES[options.calendarType] ?? CALENDAR_TYPES.monthly;
   const paper = applyOrientation(options.paperSize, options.orientation);
-  const daySize = DAY_SIZES[options.daySize] ?? DAY_SIZES.small;
   const arrangement = calendarType.arrangement[options.orientation];
+
+  /*
+   * Type scales multiply the measured defaults rather than replacing them with
+   * absolute sizes, so every size still adapts to the paper and the cell and
+   * cannot be set to something that will not fit.
+   */
+  const titleScale = getSizeScale(options.titleSize);
+  const weekdayScale = getSizeScale(options.weekdaySize);
+  const dateScale = getSizeScale(options.dateSize);
+  const holidayScale = getSizeScale(options.holidaySize);
+
+  const titleFontStack = (FONT_FAMILIES[options.titleFont] ?? FONT_FAMILIES.system).stack;
+  const bodyFontStack = (FONT_FAMILIES[options.bodyFont] ?? FONT_FAMILIES.system).stack;
 
   const printableWidthMm = paper.widthMm - paper.marginMm * 2;
   const printableHeightMm = paper.heightMm - paper.marginMm * 2 - PAGE_HEIGHT_SAFETY_MM;
@@ -150,13 +163,13 @@ export function computeLayout(options) {
   const worstCaseCellHeightMm = dayGridHeightMm / 6;
 
   const titleFontMm = isSingleMonthPerPage
-    ? clamp(titleHeightMm * 0.66, 4, 18)
-    : clamp(titleHeightMm * 0.6, 2.6, 9);
+    ? clamp(titleHeightMm * 0.66 * titleScale, 4, titleHeightMm * 0.95)
+    : clamp(titleHeightMm * 0.6 * titleScale, 2.6, titleHeightMm * 0.95);
 
   const weekdayFontMm = clamp(
-    Math.min(weekdayRowHeightMm * 0.72, cellWidthMm * 0.26) * daySize.labelScale,
+    Math.min(weekdayRowHeightMm * 0.72, cellWidthMm * 0.26) * weekdayScale,
     1.7,
-    8,
+    Math.min(weekdayRowHeightMm * 0.95, cellWidthMm * 0.34),
   );
 
   /**
@@ -173,9 +186,11 @@ export function computeLayout(options) {
       return [
         weekCount,
         clamp(
-          Math.min(cellHeightMm * DATE_FONT_OVER_CELL_HEIGHT, cellWidthMm * 0.3) * daySize.dateScale,
+          Math.min(cellHeightMm * DATE_FONT_OVER_CELL_HEIGHT, cellWidthMm * 0.3) * dateScale,
           1.9,
-          22,
+          // Never taller than half the cell, so a large scale on a dense layout
+          // still leaves the cell usable rather than filling it with a numeral.
+          Math.min(cellHeightMm * 0.5, cellWidthMm * 0.45),
         ),
       ];
     }),
@@ -187,7 +202,7 @@ export function computeLayout(options) {
   // 0.077 puts the date number the same distance off the cell edge as the
   // reference sheet, measured at about 0.059 of the cell width.
   const cellPaddingMm = clamp(Math.min(cellWidthMm, worstCaseCellHeightMm) * 0.077, 0.5, 3.3);
-  const holidayFontMm = clamp(dateFontMm * 0.42, 1.4, 3.6);
+  const holidayFontMm = clamp(dateFontMm * 0.42 * holidayScale, 1.4, 5);
 
   /*
    * A holiday name needs room in both directions. Width decides whether it can
@@ -242,6 +257,10 @@ export function computeLayout(options) {
       dayGridHeightMm,
       cellWidthMm,
       worstCaseCellHeightMm,
+      titleFontMm,
+      weekdayFontMm,
+      dateFontMm,
+      holidayFontMm,
       notesColumnWidthMm,
       notesStripHeightMm,
       notesLineHeightMm,
@@ -272,6 +291,8 @@ export function computeLayout(options) {
       '--weekend-shade': options.shadeWeekends
         ? resolveWeekendShade(options.gridColor)
         : 'transparent',
+      '--title-family': titleFontStack,
+      '--body-family': bodyFontStack,
       '--title-font': mm(titleFontMm),
       '--weekday-font': mm(weekdayFontMm),
       '--date-font': mm(dateFontMm),

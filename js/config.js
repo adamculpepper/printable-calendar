@@ -143,16 +143,78 @@ export const HOLIDAY_MODES = {
  * Big, and its month title and weekday labels are identical between the two.
  * Hence a label scale of 1 on both.
  */
-export const DAY_SIZES = {
-  big: { label: 'Big', dateScale: 1.4, labelScale: 1 },
-  small: { label: 'Small', dateScale: 1, labelScale: 1 },
-  // Below the reference's own range, for when the date is meant to stay out of
-  // the way of whatever gets written in the cell.
-  tiny: { label: 'Tiny', dateScale: 0.7, labelScale: 1 },
+/**
+ * One scale ladder shared by every type control, so "Larger" means the same
+ * step whichever part of the sheet it is applied to. The middle rung is the
+ * measured default; the outer rungs are what the old Day Size control offered.
+ */
+export const SIZE_STEPS = {
+  smallest: { label: 'Smallest', scale: 0.7 },
+  smaller: { label: 'Smaller', scale: 0.85 },
+  default: { label: 'Default', scale: 1 },
+  larger: { label: 'Larger', scale: 1.2 },
+  largest: { label: 'Largest', scale: 1.4 },
 };
 
-/** Date number height as a fraction of the cell it sits in, at Small. */
+export function getSizeScale(step) {
+  return (SIZE_STEPS[step] ?? SIZE_STEPS.default).scale;
+}
+
+/** Date number height as a fraction of the cell it sits in, at Default. */
 export const DATE_FONT_OVER_CELL_HEIGHT = 0.205;
+
+const SYSTEM_STACK =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+/**
+ * Fonts offered to the chooser.
+ *
+ * `google` is the family name as the Google Fonts API spells it, and `weights`
+ * is the axis request for that family. Asking css2 for a weight a family does
+ * not publish is a hard error from the API, so single-weight families carry no
+ * axis at all. Every stack ends in the system fallback, which is what renders
+ * if the network is unavailable.
+ */
+export const FONT_FAMILIES = {
+  system: { label: 'System', google: null, weights: null, stack: SYSTEM_STACK },
+  inter: { label: 'Inter', google: 'Inter', weights: '400;700', stack: `'Inter', ${SYSTEM_STACK}` },
+  roboto: { label: 'Roboto', google: 'Roboto', weights: '400;700', stack: `'Roboto', ${SYSTEM_STACK}` },
+  'open-sans': { label: 'Open Sans', google: 'Open Sans', weights: '400;700', stack: `'Open Sans', ${SYSTEM_STACK}` },
+  lato: { label: 'Lato', google: 'Lato', weights: '400;700', stack: `'Lato', ${SYSTEM_STACK}` },
+  montserrat: { label: 'Montserrat', google: 'Montserrat', weights: '400;700', stack: `'Montserrat', ${SYSTEM_STACK}` },
+  'work-sans': { label: 'Work Sans', google: 'Work Sans', weights: '400;700', stack: `'Work Sans', ${SYSTEM_STACK}` },
+  nunito: { label: 'Nunito', google: 'Nunito', weights: '400;700', stack: `'Nunito', ${SYSTEM_STACK}` },
+  oswald: { label: 'Oswald', google: 'Oswald', weights: '400;700', stack: `'Oswald', ${SYSTEM_STACK}` },
+  'bebas-neue': { label: 'Bebas Neue', google: 'Bebas Neue', weights: null, stack: `'Bebas Neue', ${SYSTEM_STACK}` },
+  'playfair-display': { label: 'Playfair Display', google: 'Playfair Display', weights: '400;700', stack: `'Playfair Display', Georgia, serif` },
+  lora: { label: 'Lora', google: 'Lora', weights: '400;700', stack: `'Lora', Georgia, serif` },
+  merriweather: { label: 'Merriweather', google: 'Merriweather', weights: '400;700', stack: `'Merriweather', Georgia, serif` },
+  'libre-baskerville': { label: 'Libre Baskerville', google: 'Libre Baskerville', weights: '400;700', stack: `'Libre Baskerville', Georgia, serif` },
+  'eb-garamond': { label: 'EB Garamond', google: 'EB Garamond', weights: '400;700', stack: `'EB Garamond', Georgia, serif` },
+  'abril-fatface': { label: 'Abril Fatface', google: 'Abril Fatface', weights: null, stack: `'Abril Fatface', Georgia, serif` },
+  'space-grotesk': { label: 'Space Grotesk', google: 'Space Grotesk', weights: '400;700', stack: `'Space Grotesk', ${SYSTEM_STACK}` },
+  'jetbrains-mono': { label: 'JetBrains Mono', google: 'JetBrains Mono', weights: '400;700', stack: `'JetBrains Mono', ui-monospace, monospace` },
+};
+
+/**
+ * The stylesheet URL for whichever families are in use, or null when both are
+ * the system stack and nothing needs loading.
+ */
+export function buildGoogleFontsUrl(fontKeys) {
+  const families = [...new Set(fontKeys)]
+    .map((key) => FONT_FAMILIES[key])
+    .filter((font) => font?.google)
+    .map((font) => {
+      const name = font.google.replace(/ /g, '+');
+      return font.weights ? `family=${name}:wght@${font.weights}` : `family=${name}`;
+    });
+
+  if (!families.length) {
+    return null;
+  }
+
+  return `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap`;
+}
 
 /** Week counts a month grid can have, used to size type against the real cell. */
 export const POSSIBLE_WEEK_COUNTS = [4, 5, 6];
@@ -169,7 +231,12 @@ export const DEFAULT_OPTIONS = {
   weekStart: 1,
   orientation: 'landscape',
   paperSize: 'letter',
-  daySize: 'small',
+  titleFont: 'system',
+  bodyFont: 'system',
+  titleSize: 'default',
+  weekdaySize: 'default',
+  dateSize: 'default',
+  holidaySize: 'default',
   gridLines: true,
   gridColor: '#c9c9c9',
   shadeWeekends: false,

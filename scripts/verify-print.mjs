@@ -40,7 +40,9 @@ import {
   computeGregorianEaster,
   getPrimaryHolidayName,
 } from '../js/holidays.js';
-import { PAPER_SIZES } from '../js/config.js';
+import { DEFAULT_OPTIONS, PAPER_SIZES } from '../js/config.js';
+import { computeLayout } from '../js/layout.js';
+import { readOptionsFromUrl } from '../js/controls.js';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const runFullMatrix = process.argv.includes('--full');
@@ -174,7 +176,38 @@ function buildCases() {
       shadeWeekends: true,
       holidays: 'all',
       showAdjacentDays: true,
-      daySize: 'big',
+      dateSize: 'largest',
+    }),
+    buildCase('every type size at its largest', {
+      holidays: 'all',
+      titleSize: 'largest',
+      weekdaySize: 'largest',
+      dateSize: 'largest',
+      holidaySize: 'largest',
+    }),
+    buildCase('every type size at its largest on a dense layout', {
+      calendarType: 'six-month',
+      holidays: 'all',
+      includeNotes: true,
+      titleSize: 'largest',
+      weekdaySize: 'largest',
+      dateSize: 'largest',
+      holidaySize: 'largest',
+    }),
+    buildCase('every type size at its smallest', {
+      holidays: 'all',
+      titleSize: 'smallest',
+      weekdaySize: 'smallest',
+      dateSize: 'smallest',
+      holidaySize: 'smallest',
+    }),
+    buildCase('largest type on the smallest sheet', {
+      paperSize: 'a4',
+      orientation: 'portrait',
+      calendarType: 'yearly',
+      titleSize: 'largest',
+      weekdaySize: 'largest',
+      dateSize: 'largest',
     }),
     buildCase('notes strip on a multi-month sheet', {
       calendarType: 'four-month',
@@ -316,6 +349,88 @@ function verifyDateMath() {
   check('every month from 2024 to 2028 builds a whole number of weeks with all its dates', true);
 
   verifyHolidayMath();
+  verifyOptionMigration();
+  verifyTypeScales();
+}
+
+/** Links shared before Day Size retired still have to land on the right size. */
+function verifyOptionMigration() {
+  const expectations = [
+    ['daySize=big', 'largest'],
+    ['daySize=small', 'default'],
+    ['daySize=tiny', 'smallest'],
+  ];
+
+  for (const [query, expected] of expectations) {
+    const migrated = readOptionsFromUrl(`?${query}`).dateSize;
+    check(`?${query} maps onto dateSize=${expected}`, migrated === expected, `got ${migrated}`);
+  }
+
+  const explicit = readOptionsFromUrl('?daySize=big&dateSize=smallest').dateSize;
+  check(
+    'an explicit dateSize wins over the retired daySize',
+    explicit === 'smallest',
+    `got ${explicit}`,
+  );
+}
+
+/**
+ * Type scales must actually move the sizes, and must stay inside the bounds
+ * that keep a cell usable however far they are pushed.
+ */
+function verifyTypeScales() {
+  const base = { ...DEFAULT_OPTIONS };
+  const larger = computeLayout({ ...base, dateSize: 'largest', titleSize: 'largest' });
+  const smaller = computeLayout({ ...base, dateSize: 'smallest', titleSize: 'smallest' });
+  const middle = computeLayout(base);
+
+  check(
+    'the largest date size is bigger than the default',
+    larger.metrics.dateFontMm > middle.metrics.dateFontMm,
+  );
+  check(
+    'the smallest date size is smaller than the default',
+    smaller.metrics.dateFontMm < middle.metrics.dateFontMm,
+  );
+  check(
+    'the largest title size is bigger than the default',
+    larger.metrics.titleFontMm > middle.metrics.titleFontMm,
+  );
+
+  for (const calendarType of Object.keys(MONTHS_PER_PAGE)) {
+    for (const paperSize of Object.keys(PAPER_SIZES)) {
+      const layout = computeLayout({
+        ...base,
+        calendarType,
+        paperSize,
+        orientation: 'portrait',
+        titleSize: 'largest',
+        weekdaySize: 'largest',
+        dateSize: 'largest',
+        holidaySize: 'largest',
+      });
+
+      const { dateFontMm, titleFontMm, weekdayFontMm, worstCaseCellHeightMm, titleHeightMm, weekdayRowHeightMm } =
+        layout.metrics;
+
+      if (
+        dateFontMm > worstCaseCellHeightMm * 0.5 + 0.01 ||
+        titleFontMm > titleHeightMm ||
+        weekdayFontMm > weekdayRowHeightMm
+      ) {
+        check(
+          `largest type stays inside its band for ${calendarType} / ${paperSize}`,
+          false,
+          `date ${dateFontMm.toFixed(2)} of cell ${worstCaseCellHeightMm.toFixed(2)}, ` +
+            `title ${titleFontMm.toFixed(2)} of ${titleHeightMm.toFixed(2)}, ` +
+            `weekday ${weekdayFontMm.toFixed(2)} of ${weekdayRowHeightMm.toFixed(2)}`,
+        );
+        return;
+      }
+    }
+  }
+
+  check('largest type stays inside its band on every layout and paper size', true);
 }
 
 /**

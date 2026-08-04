@@ -4,8 +4,9 @@ A calendar generator that produces clean PDFs from the browser's own print dialo
 printed except the calendar itself: no watermark, no site name down in the corner. Just the grid
 and as much blank writing space per day as the paper allows.
 
-It is a static site. No build step, no framework, no web fonts, nothing loaded from a CDN.
-Open `index.html` from a local server and everything works.
+It is a static site with no build step and no framework. The only thing it ever fetches is a font,
+and only if you pick one; leave the type on System and it touches the network never. Open
+`index.html` from a local server and everything works.
 
 ## Quick start
 
@@ -29,7 +30,9 @@ tells you which paper size and orientation to pick for whatever you have configu
 | Year | 2025, 2026, 2027, or anything you type |
 | Starting Month | Any month. The run continues from there and rolls over the year boundary. |
 | Months | 1 to 120 |
-| Day Size | Big, Small or Tiny. Scales the date numbers; the grid fills the sheet either way. |
+| Title Font | System, or any of 17 Google families. Applies to the month and year heading. |
+| Everything Else | Same list, applied to weekdays, dates and holiday names. |
+| Title / Weekday / Date / Holiday Size | Five steps from Smallest to Largest. These scale the measured defaults rather than setting absolute sizes, so type still adapts to the paper and the cell and cannot be pushed to something that will not fit. |
 | Orientation | Landscape or Portrait |
 | Paper Size | Letter, 11x17, Legal, Poster, Movie Poster, A4 |
 | Notes | Ruled column beside the grid on single-month sheets, ruled strip along the bottom on multi-month sheets |
@@ -94,7 +97,7 @@ app, navigates to each configuration, asks Chrome for a PDF the same way "Save a
 then checks the bytes that come back.
 
 ```bash
-npm run verify       # 20 configurations plus the download path
+npm run verify       # 24 configurations plus the download path
 npm run verify:full  # adds every calendar type x orientation x paper size
 ```
 
@@ -112,10 +115,35 @@ stylesheet and the export does not ship that file. A single-row monthly sheet ab
 hairline; anything denser does not. The only thing that catches it is printing the exported file
 and counting pages, so that is what the harness now does.
 
-The full matrix is 80 configurations and 664 assertions. It passes.
+Type scales are checked without a browser too. Pushing every size to its largest on every calendar
+type and paper size has to leave the date inside half the cell height and the title and weekday
+labels inside their bands, which is what stops a size control from being able to produce a sheet
+that does not fit.
+
+The full matrix is 80 configurations and 700 assertions. It passes.
 
 There is also `scripts/capture-preview.mjs`, which renders a handful of configurations to PNG in
 `.tmp/preview` so the layout can be reviewed by eye rather than only by assertion.
+
+## Fonts
+
+Type is set in the system font stack by default, and nothing is fetched in that state. Pick a
+family from the Type tab and the page adds a `<link>` to Google Fonts for the one or two families
+in use, dropping it again if you go back to System.
+
+Two things follow from that. Every stack ends in the system fonts, so a blocked or missing network
+degrades to the original typography rather than to nothing. And the Print button waits on
+`document.fonts.ready` (capped at a second and a half) before opening the dialog, because Chrome
+will otherwise happily print a page whose webfont is still in flight, which puts fallback metrics
+on the paper.
+
+The downloaded HTML carries the same `<link>`, so it keeps the typography you chose. That link is
+the only thing in the file that needs a network; without it the calendar falls back to the system
+fonts and still prints correctly.
+
+Sizes are scales rather than absolute values. Each control multiplies the measured default, so
+type continues to adapt to the paper and the cell, and the bounds hold whatever combination is
+selected.
 
 ## Holidays
 

@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="css/app.css">
 <!-- Tagged with an id so the download can lift these rules into a standalone file. -->
 <link rel="stylesheet" href="css/calendar.css" id="calendar-stylesheet">
+<!-- Pointed at Google Fonts only while a non-system font is selected. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" id="font-link">
 <!-- Populated at runtime with the @page rule and the computed page geometry. -->
 <style id="page-style"></style>
 <!-- Screen-only scale factor for the preview. Never affects print. -->
@@ -34,14 +37,18 @@
     </div>
   </section>
 
-  <aside class="controls" aria-label="Calendar options">
-    <h2 class="visually-hidden">Options</h2>
-    <div id="controls"></div>
+  <aside class="sidebar" aria-label="Calendar options">
 
+    <section class="card controls">
+      <h2 class="visually-hidden">Options</h2>
+      <div id="controls"></div>
+    </section>
+
+    <section class="card output">
     <div class="actions">
       <button type="button" class="action-button is-primary" id="print-button">Print</button>
       <button type="button" class="action-button is-secondary" id="download-button">Download HTML</button>
-      <p class="actions-note">The download is one self-contained file with no scripts in it.</p>
+      <p class="actions-note">The download is one file with no scripts in it. A Google font, if you picked one, still loads from the network.</p>
     </div>
 
     <section class="instructions" aria-labelledby="instructions-title">
@@ -52,6 +59,8 @@
 
     <!-- Only present when an option needs something set in the print dialog. -->
     <div class="notice" id="print-notice" role="note" hidden></div>
+    </section>
+
   </aside>
 
 </main>
@@ -62,8 +71,8 @@
       <h2 class="about-title">About</h2>
       <p>
         A calendar generator that prints straight from the browser. It is a static page with no
-        build step and no framework, and it loads nothing from anywhere else. Whatever you set up
-        here is in the address bar, so a configuration is a link you can keep or send on.
+        build step and no framework. Whatever you set up here is in the address bar, so a
+        configuration is a link you can keep or send on.
       </p>
       <p>
         Holiday dates come from
@@ -73,6 +82,13 @@
         in <code>vendor/holidate</code>. It covers United States holidays, which is why the
         Holidays control is US only. Easter and the dates derived from it are recalculated here so
         they stay right outside the years the library's lookup table was built for.
+      </p>
+      <p>
+        Type is set in the system fonts unless you pick something else, in which case the page
+        loads it from
+        <a class="about-link" href="https://fonts.google.com" rel="noopener noreferrer" target="_blank">Google Fonts</a>.
+        That is the only thing here that reaches the network. If it cannot, the calendar falls back
+        to the system fonts and prints the same as it always did.
       </p>
     </section>
   </div>

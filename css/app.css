@@ -105,24 +105,105 @@ body {
 
 /* Controls -------------------------------------------------------------- */
 
-.controls {
+/*
+ * The sidebar holds two cards: what the calendar is, and what to do with it.
+ * Splitting them makes clear that the buttons and the print settings are not
+ * more options.
+ */
+.sidebar {
   position: sticky;
   top: 28px;
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  padding: 6px 18px 18px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
 
-  /* A sticky panel taller than the window would pin its top and put the Print
+  /* A sticky column taller than the window would pin its top and put the Print
      button permanently out of reach, so it scrolls within itself instead. On a
      tall window there is nothing to scroll and no scrollbar appears. */
   max-height: calc(100vh - 56px);
   overflow-y: auto;
+}
 
-  /* Lets the fields below react to the panel's own width rather than the
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.controls {
+  padding: 0 18px 16px;
+
+  /* Lets the fields below react to the card's own width rather than the
      window's, which is what actually decides whether a label fits. */
   container-type: inline-size;
   container-name: panel;
+}
+
+.output {
+  padding: 16px 18px 18px;
+}
+
+/* Tabs ------------------------------------------------------------------ */
+
+/*
+ * Folder tabs: the strip is recessed and runs to the card's edges, and the
+ * selected tab is the same white as the panel with its bottom edge removed, so
+ * it joins the content below instead of floating above it as a row of buttons.
+ */
+.tab-list {
+  display: flex;
+  gap: 4px;
+  margin: 0 -18px;
+  padding: 9px 14px 0;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--rule);
+  border-radius: 9px 9px 0 0;
+}
+
+.tab {
+  appearance: none;
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: -1px;
+  padding: 8px 6px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 7px 7px 0 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 90ms ease, color 90ms ease;
+}
+
+.tab:hover:not([aria-selected='true']) {
+  background: rgb(255 255 255 / 55%);
+  color: var(--ink);
+}
+
+.tab[aria-selected='true'] {
+  background: var(--surface);
+  border-color: var(--rule);
+  color: var(--accent);
+  padding-bottom: 9px;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/*
+ * Rows are separated by space rather than rules. The gap between rows is set
+ * wider than the gap inside a field, so a label, its control and its note read
+ * as one block without needing a line drawn under them.
+ */
+.tab-panel {
+  display: grid;
+  gap: 19px;
+  padding-top: 15px;
 }
 
 /*
@@ -133,21 +214,15 @@ body {
 .control-row {
   display: grid;
   gap: 7px 14px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--rule);
 }
 
 .control-row.is-split {
   grid-template-columns: 1fr 1fr;
 }
 
-.control-row:last-of-type {
-  border-bottom: 0;
-}
-
 .control-field {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   align-content: start;
   min-width: 0;
 }
@@ -174,18 +249,75 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* Marks a setting that needs something enabled in the print dialog. */
-.control-label-warning {
+/*
+ * Markers beside a field label: a warning for a setting that needs something
+ * enabled in the print dialog, and an info mark carrying the field's
+ * description so it does not take a line of its own under every control.
+ */
+.control-label-marker {
+  position: relative;
   display: inline-flex;
   align-self: center;
-  color: var(--warning-ink);
   cursor: help;
 }
 
-.control-label-warning-icon {
+.control-label-marker.is-warning {
+  color: var(--warning-ink);
+}
+
+.control-label-marker.is-info {
+  color: var(--ink-faint);
+}
+
+.control-label-marker.is-info:hover,
+.control-label-marker.is-info:focus-visible {
+  color: var(--ink-soft);
+}
+
+.control-label-marker:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.control-label-marker-icon {
   width: 14px;
   height: 14px;
   display: block;
+}
+
+/*
+ * The bubble opens downward. The sidebar is a scroll container, so a tooltip
+ * above the first row of a card would be clipped by its own top edge.
+ */
+.control-label-marker::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: max-content;
+  max-width: 180px;
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 100ms ease;
+}
+
+.control-label-marker:hover::after,
+.control-label-marker:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 /*
@@ -435,11 +567,13 @@ body {
   border-radius: 2px;
 }
 
+/* Tucked up against its control, so it groups with it rather than floating
+   midway between two rows. */
 .control-note {
-  margin: 0;
+  margin: -2px 0 0;
   color: var(--ink-faint);
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .control-row[hidden] {
@@ -451,7 +585,6 @@ body {
 .actions {
   display: grid;
   gap: 10px;
-  margin-top: 18px;
 }
 
 .action-button {
@@ -558,8 +691,6 @@ kbd {
 /* Notice ---------------------------------------------------------------- */
 
 .notice {
-  display: flex;
-  gap: 9px;
   margin-top: 10px;
   padding: 10px 12px;
   border: 1px solid var(--warning-rule);
@@ -574,11 +705,16 @@ kbd {
   display: none;
 }
 
+.notice-message {
+  margin: 0;
+}
+
 .notice-icon {
-  width: 15px;
-  height: 15px;
-  flex: none;
-  margin-top: 1px;
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
   color: var(--warning-ink);
 }
 
@@ -649,9 +785,11 @@ kbd {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .controls {
+  .sidebar {
     position: static;
     order: -1;
+    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -673,9 +811,11 @@ kbd {
     background: #fff;
   }
 
+  /* The whole sidebar goes, not just the options card: the actions and print
+     settings live in a second card beside it and would otherwise print. */
   .app-header,
   .app-footer,
-  .controls,
+  .sidebar,
   .preview-bar {
     display: none;
   }

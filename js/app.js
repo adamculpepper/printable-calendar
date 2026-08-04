@@ -4,7 +4,13 @@
  * self-contained HTML download.
  */
 
-import { CALENDAR_TYPES, MM_PER_INCH, MONTH_NAMES, PAPER_SIZES } from './config.js';
+import {
+  CALENDAR_TYPES,
+  MM_PER_INCH,
+  MONTH_NAMES,
+  PAPER_SIZES,
+  buildGoogleFontsUrl,
+} from './config.js';
 import { readOptionsFromUrl, renderControls, writeOptionsToUrl } from './controls.js';
 import { addMonths } from './date-utils.js';
 import { buildPageStylesheet } from './layout.js';
@@ -20,6 +26,7 @@ const elements = {
   instructionsList: document.getElementById('instructions-list'),
   notice: document.getElementById('print-notice'),
   pageStyle: document.getElementById('page-style'),
+  fontLink: document.getElementById('font-link'),
   previewStyle: document.getElementById('preview-style'),
   previewFrame: document.getElementById('preview-frame'),
   printButton: document.getElementById('print-button'),
@@ -61,6 +68,45 @@ function updateSummary(result) {
 }
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+/**
+ * Points the font <link> at whichever families are selected, and takes it out
+ * of the document entirely when both are the system stack so nothing is
+ * requested. Every stack falls back to the system fonts, so a blocked or absent
+ * network degrades to the original typography rather than to nothing.
+ */
+function updateFontLink() {
+  const url = buildGoogleFontsUrl([options.titleFont, options.bodyFont]);
+
+  if (!url) {
+    elements.fontLink.removeAttribute('href');
+    return;
+  }
+
+  if (elements.fontLink.getAttribute('href') !== url) {
+    elements.fontLink.setAttribute('href', url);
+  }
+}
+
+/**
+ * Chrome will happily print with a webfont still in flight, which lands
+ * fallback metrics on the paper and shifts everything the layout was measured
+ * against. Waiting for the font set to settle costs nothing once it is cached
+ * and prevents that; the timeout means a hung request delays the dialog by a
+ * second rather than blocking it.
+ */
+async function printWhenFontsReady() {
+  try {
+    await Promise.race([
+      document.fonts.ready,
+      new Promise((resolveTimeout) => setTimeout(resolveTimeout, 1500)),
+    ]);
+  } catch {
+    // A font that fails to load is not a reason to refuse to print.
+  }
+
+  window.print();
+}
 
 /** Matches the print dialog's own wording so the two can be read side by side. */
 function buildInstructionRows() {
@@ -159,12 +205,15 @@ function updateNotice() {
   const heading = document.createElement('strong');
   heading.textContent = 'Turn on Background graphics';
 
+  // The icon runs inline with the text rather than sitting in its own column,
+  // so the notice reads as one sentence.
   message.append(
+    icon,
     heading,
     document.createTextNode(` under More settings, or ${features.join(' and ')} won't print.`),
   );
 
-  elements.notice.replaceChildren(icon, message);
+  elements.notice.replaceChildren(message);
   elements.notice.hidden = false;
 }
 
@@ -191,6 +240,7 @@ function update() {
   lastResult = result;
 
   elements.pageStyle.textContent = buildPageStylesheet(result.layout);
+  updateFontLink();
 
   renderControls(elements.controls, options, result, handleOptionChange);
   updateSummary(result);
@@ -260,6 +310,7 @@ async function readCalendarStylesheetText() {
 
 async function buildStandaloneDocument() {
   const title = `Calendar ${describeRange(options)}`;
+  const fontsUrl = buildGoogleFontsUrl([options.titleFont, options.bodyFont]);
 
   const document_ = [
     '<!doctype html>',
@@ -268,6 +319,10 @@ async function buildStandaloneDocument() {
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${title}</title>`,
+    // Carried through so the saved file keeps the chosen typography. It is the
+    // one thing in the file that needs a network; without it the calendar falls
+    // back to the system fonts and still prints correctly.
+    ...(fontsUrl ? [`<link rel="stylesheet" href="${fontsUrl}">`] : []),
     '<style>',
     'html, body { margin: 0; padding: 0; background: #fff; }',
     '@media screen { body { background: #f1f1f3; padding: 28px 0; } }',
@@ -304,7 +359,7 @@ async function handleDownload() {
   URL.revokeObjectURL(url);
 }
 
-elements.printButton.addEventListener('click', () => window.print());
+elements.printButton.addEventListener('click', printWhenFontsReady);
 elements.downloadButton.addEventListener('click', handleDownload);
 
 let resizeFrame = 0;

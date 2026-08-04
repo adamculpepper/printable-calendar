@@ -11,12 +11,13 @@
 
 import {
   CALENDAR_TYPES,
-  DAY_SIZES,
   DEFAULT_OPTIONS,
+  FONT_FAMILIES,
   GRID_COLORS,
   HOLIDAY_MODES,
   MONTH_NAMES,
   PAPER_SIZES,
+  SIZE_STEPS,
 } from './config.js';
 
 const QUICK_YEARS = [2025, 2026, 2027];
@@ -30,12 +31,11 @@ function toChoices(definitions) {
 }
 
 /**
- * Icons for the two options whose labels do not survive a half-width column.
- *
- * Drawn as inline SVG rectangles rather than pulled from an icon font: the app
- * loads no external assets, and these shapes say what they mean. Orientation is
- * the shape of the sheet. Day Size is a cell with the date number in its
- * corner, drawn at the size that option produces.
+ * Panel icons, drawn as inline SVG rather than pulled from an icon font so they
+ * cost nothing to load and cannot arrive late. Orientation is the shape of the
+ * sheet, which survives a half-width column where the word does not; the
+ * warning triangle marks a setting that needs something done in the print
+ * dialog.
  */
 const ICON_SHAPES = {
   landscape: [{ x: 1.5, y: 4.5, width: 17, height: 11, rx: 1.2 }],
@@ -45,17 +45,10 @@ const ICON_SHAPES = {
     { path: 'M10 8.4 V12.4' },
     { path: 'M10 15.1 h0.01' },
   ],
-  'day-big': [
-    { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
-    { x: 6.6, y: 5, width: 8.6, height: 8.6, rx: 0.8, filled: true },
-  ],
-  'day-small': [
-    { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
-    { x: 10.4, y: 5, width: 4.8, height: 4.8, rx: 0.6, filled: true },
-  ],
-  'day-tiny': [
-    { x: 2.5, y: 2.5, width: 15, height: 15, rx: 1.2 },
-    { x: 12.8, y: 5, width: 2.4, height: 2.4, rx: 0.3, filled: true },
+  info: [
+    { circle: { cx: 10, cy: 10, r: 7.6 } },
+    { path: 'M10 9.2 V14.2' },
+    { path: 'M10 6.2 h0.01' },
   ],
 };
 
@@ -75,6 +68,18 @@ function createIcon(name, className = 'option-icon') {
   svg.setAttribute('focusable', 'false');
 
   for (const shape of shapes) {
+    if (shape.circle) {
+      const circle = document.createElementNS(SVG_NAMESPACE, 'circle');
+      circle.setAttribute('cx', String(shape.circle.cx));
+      circle.setAttribute('cy', String(shape.circle.cy));
+      circle.setAttribute('r', String(shape.circle.r));
+      circle.setAttribute('fill', 'none');
+      circle.setAttribute('stroke', 'currentColor');
+      circle.setAttribute('stroke-width', '1.6');
+      svg.append(circle);
+      continue;
+    }
+
     if (shape.path) {
       const path = document.createElementNS(SVG_NAMESPACE, 'path');
       path.setAttribute('d', shape.path);
@@ -180,20 +185,35 @@ const FIELDS = {
       },
     ],
   },
-  daySize: {
-    label: 'Day Size',
+  titleFont: {
+    label: 'Title Font',
+    labelInfo: () => 'Sets the month and year heading.',
     controls: [
-      {
-        type: 'buttons',
-        key: 'daySize',
-        choices: [
-          { value: 'big', label: 'Big', icon: 'day-big' },
-          { value: 'small', label: 'Small', icon: 'day-small' },
-          { value: 'tiny', label: 'Tiny', icon: 'day-tiny' },
-        ],
-      },
+      { type: 'select', key: 'titleFont', ariaLabel: 'Title font', choices: toChoices(FONT_FAMILIES) },
     ],
-    describe: () => 'Scales the date numbers.',
+  },
+  bodyFont: {
+    label: 'Body Font',
+    labelInfo: () => 'Sets the weekday names, the dates and any holiday names.',
+    controls: [
+      { type: 'select', key: 'bodyFont', ariaLabel: 'Body font', choices: toChoices(FONT_FAMILIES) },
+    ],
+  },
+  titleSize: {
+    label: 'Title Size',
+    controls: [{ type: 'select', key: 'titleSize', ariaLabel: 'Title size', choices: toChoices(SIZE_STEPS) }],
+  },
+  weekdaySize: {
+    label: 'Weekday Size',
+    controls: [{ type: 'select', key: 'weekdaySize', ariaLabel: 'Weekday size', choices: toChoices(SIZE_STEPS) }],
+  },
+  dateSize: {
+    label: 'Date Size',
+    controls: [{ type: 'select', key: 'dateSize', ariaLabel: 'Date size', choices: toChoices(SIZE_STEPS) }],
+  },
+  holidaySize: {
+    label: 'Holiday Size',
+    controls: [{ type: 'select', key: 'holidaySize', ariaLabel: 'Holiday text size', choices: toChoices(SIZE_STEPS) }],
   },
   weekStart: {
     label: 'Weekday Starts',
@@ -305,19 +325,44 @@ const FIELDS = {
 };
 
 /**
- * Rows, in panel order. Two fields on a row share it evenly; the narrow options
- * are paired off so the whole panel stays within a screen.
+ * Tabs, each holding rows of one or two fields. Splitting the panel three ways
+ * keeps every group short enough to take in at once: what the calendar covers,
+ * how the sheet is marked up, and how it is set in type.
  */
-const CONTROL_ROWS = [
-  [FIELDS.calendarType, FIELDS.paperSize],
-  [FIELDS.year],
-  [FIELDS.startMonth, FIELDS.monthCount],
-  [FIELDS.orientation, FIELDS.daySize],
-  [FIELDS.weekStart, FIELDS.shadeWeekends],
-  [FIELDS.gridLines, FIELDS.gridColor],
-  [FIELDS.includeNotes, FIELDS.showAdjacentDays],
-  [FIELDS.holidays],
+const CONTROL_TABS = [
+  {
+    id: 'calendar',
+    label: 'Calendar',
+    rows: [
+      [FIELDS.calendarType, FIELDS.paperSize],
+      [FIELDS.orientation, FIELDS.weekStart],
+      [FIELDS.year],
+      [FIELDS.startMonth, FIELDS.monthCount],
+    ],
+  },
+  {
+    id: 'sheet',
+    label: 'Sheet',
+    rows: [
+      [FIELDS.gridLines, FIELDS.gridColor],
+      [FIELDS.shadeWeekends, FIELDS.showAdjacentDays],
+      [FIELDS.includeNotes],
+      [FIELDS.holidays],
+    ],
+  },
+  {
+    id: 'type',
+    label: 'Type',
+    rows: [
+      [FIELDS.titleFont, FIELDS.bodyFont],
+      [FIELDS.titleSize, FIELDS.weekdaySize],
+      [FIELDS.dateSize, FIELDS.holidaySize],
+    ],
+  },
 ];
+
+/** Which tab is open. Panel state, not calendar state, so it stays out of the URL. */
+let activeTabId = CONTROL_TABS[0].id;
 
 /**
  * Option types, used for both URL parsing and coercing values off DOM inputs.
@@ -330,7 +375,12 @@ const OPTION_TYPES = {
   weekStart: { kind: 'integer', min: 0, max: 1 },
   orientation: { kind: 'enum', values: ['landscape', 'portrait'] },
   paperSize: { kind: 'enum', values: Object.keys(PAPER_SIZES) },
-  daySize: { kind: 'enum', values: Object.keys(DAY_SIZES) },
+  titleFont: { kind: 'enum', values: Object.keys(FONT_FAMILIES) },
+  bodyFont: { kind: 'enum', values: Object.keys(FONT_FAMILIES) },
+  titleSize: { kind: 'enum', values: Object.keys(SIZE_STEPS) },
+  weekdaySize: { kind: 'enum', values: Object.keys(SIZE_STEPS) },
+  dateSize: { kind: 'enum', values: Object.keys(SIZE_STEPS) },
+  holidaySize: { kind: 'enum', values: Object.keys(SIZE_STEPS) },
   gridLines: { kind: 'boolean' },
   gridColor: { kind: 'color' },
   shadeWeekends: { kind: 'boolean' },
@@ -374,6 +424,13 @@ function coerce(key, rawValue) {
   return undefined;
 }
 
+/**
+ * Day Size used to be its own three-step control before the type sizes covered
+ * it. Links shared while it existed still carry it, so its values are mapped
+ * onto the shared ladder rather than dropped.
+ */
+const RETIRED_DAY_SIZES = { big: 'largest', small: 'default', tiny: 'smallest' };
+
 /** Merges any recognized query parameters over the defaults. */
 export function readOptionsFromUrl(search = window.location.search) {
   const parameters = new URLSearchParams(search);
@@ -389,6 +446,12 @@ export function readOptionsFromUrl(search = window.location.search) {
     if (value !== undefined) {
       options[key] = value;
     }
+  }
+
+  const retiredDaySize = RETIRED_DAY_SIZES[parameters.get('daySize')];
+
+  if (retiredDaySize && !parameters.has('dateSize')) {
+    options.dateSize = retiredDaySize;
   }
 
   return options;
@@ -602,6 +665,26 @@ function restoreFocus(container, captured) {
   }
 }
 
+/**
+ * A small marker beside a field label carrying a tooltip.
+ *
+ * The bubble is CSS on `data-tooltip`, so there is nothing to load and nothing
+ * to position in script. It is focusable and carries the same text as a label,
+ * so the tooltip is reachable by keyboard and read out rather than being purely
+ * a hover affordance.
+ */
+function createLabelMarker(variant, iconName, text) {
+  const marker = document.createElement('span');
+  marker.className = `control-label-marker is-${variant}`;
+  marker.dataset.tooltip = text;
+  marker.tabIndex = 0;
+  marker.setAttribute('role', 'note');
+  marker.setAttribute('aria-label', text);
+  marker.append(createIcon(iconName, 'control-label-marker-icon'));
+
+  return marker;
+}
+
 function renderField(field, fieldId, options, result, onChange) {
   const disabled = Boolean(field.disabledWhen?.(options));
 
@@ -626,17 +709,13 @@ function renderField(field, fieldId, options, result, onChange) {
   const labelIcon = field.labelIcon?.(options);
 
   if (labelIcon) {
-    const marker = document.createElement('span');
-    marker.className = 'control-label-warning';
-    marker.title = labelIcon.title;
-    marker.append(createIcon(labelIcon.name, 'control-label-warning-icon'));
+    labelRow.append(createLabelMarker('warning', labelIcon.name, labelIcon.title));
+  }
 
-    const description = document.createElement('span');
-    description.className = 'visually-hidden';
-    description.textContent = labelIcon.title;
-    marker.append(description);
+  const labelInfo = field.labelInfo?.(options);
 
-    labelRow.append(marker);
+  if (labelInfo) {
+    labelRow.append(createLabelMarker('info', 'info', labelInfo));
   }
 
   fieldElement.append(labelRow);
@@ -664,6 +743,51 @@ function renderField(field, fieldId, options, result, onChange) {
   return fieldElement;
 }
 
+function renderTabList(redraw) {
+  const list = document.createElement('div');
+  list.className = 'tab-list';
+  list.setAttribute('role', 'tablist');
+  list.setAttribute('aria-label', 'Option groups');
+
+  CONTROL_TABS.forEach((tab, index) => {
+    const isActive = tab.id === activeTabId;
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'tab';
+    button.id = `tab-${tab.id}`;
+    button.textContent = tab.label;
+    button.dataset.controlId = `tab|${tab.id}`;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(isActive));
+    button.setAttribute('aria-controls', `tabpanel-${tab.id}`);
+
+    // Roving tabindex: one stop for the whole set, arrows move between them.
+    button.tabIndex = isActive ? 0 : -1;
+
+    button.addEventListener('click', () => {
+      activeTabId = tab.id;
+      redraw();
+    });
+
+    button.addEventListener('keydown', (event) => {
+      const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+
+      if (!step) {
+        return;
+      }
+
+      event.preventDefault();
+      activeTabId = CONTROL_TABS[(index + step + CONTROL_TABS.length) % CONTROL_TABS.length].id;
+      redraw();
+    });
+
+    list.append(button);
+  });
+
+  return list;
+}
+
 /**
  * Rebuilds the panel from scratch on every change. The panel is a couple of
  * dozen nodes, so the simplicity of a full redraw beats diffing, and it removes
@@ -673,20 +797,33 @@ function renderField(field, fieldId, options, result, onChange) {
  */
 export function renderControls(container, options, result, onChange) {
   const captured = captureFocus(container);
+  const redraw = () => renderControls(container, options, result, onChange);
   const fragment = document.createDocumentFragment();
 
-  CONTROL_ROWS.forEach((row, rowIndex) => {
+  fragment.append(renderTabList(redraw));
+
+  const activeTab = CONTROL_TABS.find((tab) => tab.id === activeTabId) ?? CONTROL_TABS[0];
+
+  const panel = document.createElement('div');
+  panel.className = 'tab-panel';
+  panel.id = `tabpanel-${activeTab.id}`;
+  panel.setAttribute('role', 'tabpanel');
+  panel.setAttribute('aria-labelledby', `tab-${activeTab.id}`);
+
+  activeTab.rows.forEach((row, rowIndex) => {
     const rowElement = document.createElement('div');
     rowElement.className = row.length > 1 ? 'control-row is-split' : 'control-row';
 
     row.forEach((field, fieldIndex) => {
       rowElement.append(
-        renderField(field, `control-${rowIndex}-${fieldIndex}`, options, result, onChange),
+        renderField(field, `control-${activeTab.id}-${rowIndex}-${fieldIndex}`, options, result, onChange),
       );
     });
 
-    fragment.append(rowElement);
+    panel.append(rowElement);
   });
+
+  fragment.append(panel);
 
   container.replaceChildren(fragment);
   restoreFocus(container, captured);
