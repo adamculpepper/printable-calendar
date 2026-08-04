@@ -11,7 +11,7 @@ import {
   PAPER_SIZES,
   buildGoogleFontsUrl,
 } from './config.js';
-import { readOptionsFromUrl, renderControls, writeOptionsToUrl } from './controls.js';
+import { createIcon, readOptionsFromUrl, renderControls, writeOptionsToUrl } from './controls.js';
 import { addMonths } from './date-utils.js';
 import { buildPageStylesheet } from './layout.js';
 import { renderCalendar } from './render.js';
@@ -66,8 +66,6 @@ function updateSummary(result) {
 
   elements.summary.append(count, document.createTextNode(' · '), detail);
 }
-
-const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
 /**
  * Points the font <link> at whichever families are selected, and takes it out
@@ -183,22 +181,7 @@ function updateNotice() {
     return;
   }
 
-  const icon = document.createElementNS(SVG_NAMESPACE, 'svg');
-  icon.setAttribute('class', 'notice-icon');
-  icon.setAttribute('viewBox', '0 0 20 20');
-  icon.setAttribute('aria-hidden', 'true');
-
-  for (const shape of ['M10 3.4 L18.3 17.6 H1.7 Z', 'M10 8.4 V12.4', 'M10 15.1 h0.01']) {
-    const path = document.createElementNS(SVG_NAMESPACE, 'path');
-    path.setAttribute('d', shape);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', 'currentColor');
-    path.setAttribute('stroke-width', '1.6');
-    path.setAttribute('stroke-linecap', 'round');
-    path.setAttribute('stroke-linejoin', 'round');
-    icon.append(path);
-  }
-
+  const icon = createIcon('warning', 'notice-icon');
   const message = document.createElement('p');
   message.className = 'notice-message';
 

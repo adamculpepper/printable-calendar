@@ -46,9 +46,24 @@
 
     <section class="card output">
     <div class="actions">
-      <button type="button" class="action-button is-primary" id="print-button">Print</button>
-      <button type="button" class="action-button is-secondary" id="download-button">Download HTML</button>
-      <p class="actions-note">The download is one file with no scripts in it. A Google font, if you picked one, still loads from the network.</p>
+      <button type="button" class="action-button is-primary" id="print-button">
+        <svg class="action-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="M6.4 6.6 V2.8 H13.6 V6.6" />
+          <rect x="2.4" y="6.6" width="15.2" height="6.2" rx="1.6" />
+          <path d="M6.4 12.8 V17.2 H13.6 V12.8" />
+          <path d="M14.7 9.4 h0.01" />
+        </svg>
+        Print
+      </button>
+      <button type="button" class="action-button is-secondary" id="download-button">
+        <svg class="action-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+          <path d="M10 2.8 V12.6" />
+          <path d="M6.4 9.2 L10 12.8 L13.6 9.2" />
+          <path d="M3.4 14.4 V16.4 H16.6 V14.4" />
+        </svg>
+        Download HTML
+      </button>
+      <p class="actions-note">One file, no scripts. A chosen font still loads from Google.</p>
     </div>
 
     <section class="instructions" aria-labelledby="instructions-title">

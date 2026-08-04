@@ -38,23 +38,45 @@ function toChoices(definitions) {
  * dialog.
  */
 const ICON_SHAPES = {
-  landscape: [{ x: 1.5, y: 4.5, width: 17, height: 11, rx: 1.2 }],
-  portrait: [{ x: 4.5, y: 1.5, width: 11, height: 17, rx: 1.2 }],
+  // A sheet with lines of content on it, rather than a bare rectangle: the
+  // ruling is what makes the shape read as a page turned one way or the other.
+  landscape: [
+    { x: 1.6, y: 4.4, width: 16.8, height: 11.2, rx: 1.4 },
+    { path: 'M4.4 8 H15.6', strokeWidth: 1.1 },
+    { path: 'M4.4 10.6 H15.6', strokeWidth: 1.1 },
+    { path: 'M4.4 13.2 H12.2', strokeWidth: 1.1 },
+  ],
+  portrait: [
+    { x: 4.4, y: 1.6, width: 11.2, height: 16.8, rx: 1.4 },
+    { path: 'M7 5.8 H13', strokeWidth: 1.1 },
+    { path: 'M7 8.8 H13', strokeWidth: 1.1 },
+    { path: 'M7 11.8 H13', strokeWidth: 1.1 },
+    { path: 'M7 14.8 H10.8', strokeWidth: 1.1 },
+  ],
+  /*
+   * Solid, with the exclamation knocked out of it. A stroked outline of this
+   * size loses the mark entirely at the 14px the label uses, and the hole keeps
+   * it legible on the white card and the amber notice alike.
+   */
   warning: [
-    { path: 'M10 3.4 L18.3 17.6 H1.7 Z' },
-    { path: 'M10 8.4 V12.4' },
-    { path: 'M10 15.1 h0.01' },
+    {
+      fillPath:
+        'M9.14 2.6 a1 1 0 0 1 1.72 0 l8.05 14.2 a1 1 0 0 1 -0.86 1.5 H1.95 a1 1 0 0 1 -0.86 -1.5 Z ' +
+        'M9.1 7.3 h1.8 v5.1 h-1.8 Z ' +
+        'M9.1 14 h1.8 v1.8 h-1.8 Z',
+      fillRule: 'evenodd',
+    },
   ],
   info: [
-    { circle: { cx: 10, cy: 10, r: 7.6 } },
-    { path: 'M10 9.2 V14.2' },
-    { path: 'M10 6.2 h0.01' },
+    { circle: { cx: 10, cy: 10, r: 7.4 } },
+    { path: 'M10 9.4 V13.9' },
+    { path: 'M10 6.4 h0.01' },
   ],
 };
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
-function createIcon(name, className = 'option-icon') {
+export function createIcon(name, className = 'option-icon') {
   const shapes = ICON_SHAPES[name];
 
   if (!shapes) {
@@ -68,6 +90,15 @@ function createIcon(name, className = 'option-icon') {
   svg.setAttribute('focusable', 'false');
 
   for (const shape of shapes) {
+    if (shape.fillPath) {
+      const path = document.createElementNS(SVG_NAMESPACE, 'path');
+      path.setAttribute('d', shape.fillPath);
+      path.setAttribute('fill', 'currentColor');
+      path.setAttribute('fill-rule', shape.fillRule ?? 'nonzero');
+      svg.append(path);
+      continue;
+    }
+
     if (shape.circle) {
       const circle = document.createElementNS(SVG_NAMESPACE, 'circle');
       circle.setAttribute('cx', String(shape.circle.cx));
@@ -85,7 +116,7 @@ function createIcon(name, className = 'option-icon') {
       path.setAttribute('d', shape.path);
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke', 'currentColor');
-      path.setAttribute('stroke-width', '1.6');
+      path.setAttribute('stroke-width', String(shape.strokeWidth ?? 1.6));
       path.setAttribute('stroke-linecap', 'round');
       path.setAttribute('stroke-linejoin', 'round');
       svg.append(path);
