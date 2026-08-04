@@ -56,12 +56,23 @@
  * calendar types.
  */
 .month-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--month-columns), 1fr);
-  grid-template-rows: repeat(var(--month-rows), 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
   gap: var(--gutter);
   width: var(--body-width);
   height: var(--body-height);
+}
+
+/*
+ * Month blocks take the exact size layout.js computed for them rather than a
+ * fraction worked out in CSS, which is what makes the arrangement wrap into the
+ * right number of columns and rows without either side having to guess.
+ */
+.month {
+  flex: 0 0 auto;
+  width: var(--block-width);
+  height: var(--block-height);
 }
 
 .month {
@@ -71,6 +82,12 @@
   min-height: 0;
   break-inside: avoid;
   page-break-inside: avoid;
+}
+
+.month-title,
+.weekday-row,
+.day-grid {
+  flex: none;
 }
 
 .month-title {
@@ -93,20 +110,16 @@
 }
 
 /*
- * Wrappers that exist only to give the accessibility tree a table to walk:
- * a table element around the header and the weeks, and a row element around
- * each set of seven cells. `display: contents` keeps them out of the box tree
- * entirely, so the weekday strip stays a flex child of .month and the day cells
- * stay grid items of .day-grid. The printed geometry is unchanged.
+ * Exists only to give the accessibility tree a table to walk around the header
+ * and the weeks. `display: contents` keeps it out of the box tree entirely, so
+ * the weekday strip and the day grid stay flex children of .month.
  */
-.month-table,
-.week {
+.month-table {
   display: contents;
 }
 
 .weekday-row {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  display: flex;
   height: var(--weekday-row-height);
   align-items: end;
   font-size: var(--weekday-font);
@@ -115,7 +128,14 @@
   letter-spacing: 0.02em;
 }
 
+/*
+ * Seven equal columns, shared by the weekday strip and every week below it.
+ * `flex: 1 1 0` divides the width the way the grid track `1fr` did, without the
+ * sub-pixel gap that seven hard-coded percentages would leave at the right edge.
+ */
 .weekday-label {
+  flex: 1 1 0;
+  min-width: 0;
   padding: 0 var(--cell-padding) calc(var(--cell-padding) * 0.6);
   text-decoration: none;
   overflow: hidden;
@@ -123,14 +143,13 @@
 }
 
 /*
- * The grid gets an explicit height and equal-height rows. A five-row month
- * therefore stretches to the same bottom edge as a six-row month, with taller
- * cells. That is intended: the sheet always fills to the bottom margin.
+ * The grid gets an explicit height and its weeks share that height equally, so
+ * a five-row month stretches to the same bottom edge as a six-row month, with
+ * taller cells. That is intended: the sheet always fills to the bottom margin.
  */
 .day-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 1fr;
+  display: flex;
+  flex-direction: column;
   height: var(--day-grid-height);
 
   /*
@@ -159,9 +178,17 @@
   --date-font: var(--date-font-6);
 }
 
+/* Every week takes an equal share of the grid's fixed height. */
+.week {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .day-cell {
   box-sizing: border-box;
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   align-items: flex-end;
   min-width: 0;

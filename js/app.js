@@ -140,13 +140,18 @@ function updateInstructions() {
   const list = document.createDocumentFragment();
 
   for (const [setting, value] of buildInstructionRows()) {
+    // A wrapper per pair, so each setting and its value are one flex row.
+    const row = document.createElement('div');
+    row.className = 'instructions-row';
+
     const term = document.createElement('dt');
     term.textContent = setting;
 
     const definition = document.createElement('dd');
     definition.textContent = value;
 
-    list.append(term, definition);
+    row.append(term, definition);
+    list.append(row);
   }
 
   elements.instructionsList.replaceChildren(list);

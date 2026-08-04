@@ -32,7 +32,15 @@
   box-sizing: border-box;
 }
 
+/*
+ * A column the height of the window at minimum, with the shell taking the slack
+ * between the header and the footer. That is what keeps the footer on the
+ * bottom edge when the calendar is short, without positioning anything.
+ */
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   margin: 0;
   background: var(--surface-sunken);
   color: var(--ink);
@@ -43,6 +51,7 @@ body {
 }
 
 .app-header {
+  flex: none;
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
   padding: 18px 28px;
@@ -62,18 +71,23 @@ body {
 }
 
 .app-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 372px;
+  display: flex;
   gap: 28px;
-  align-items: start;
+  align-items: flex-start;
   padding: 28px;
   max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
+
+  /* Takes the space between the header and the footer, which is what holds the
+     footer at the bottom of a short page without positioning it. */
+  flex: 1 1 auto;
 }
 
 /* Preview --------------------------------------------------------------- */
 
 .preview {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -113,9 +127,11 @@ body {
 .sidebar {
   position: sticky;
   top: 28px;
-  display: grid;
+  flex: 0 0 auto;
+  width: 372px;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  align-content: start;
 
   /* A sticky column taller than the window would pin its top and put the Print
      button permanently out of reach, so it scrolls within itself instead. On a
@@ -201,7 +217,8 @@ body {
  * as one block without needing a line drawn under them.
  */
 .tab-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 19px;
   padding-top: 15px;
 }
@@ -212,18 +229,17 @@ body {
  * keeps the whole panel within a screen instead of running off the bottom.
  */
 .control-row {
-  display: grid;
-  gap: 7px 14px;
+  display: flex;
+  gap: 14px;
 }
 
-.control-row.is-split {
-  grid-template-columns: 1fr 1fr;
-}
-
+/* One field fills the row; two share it evenly. */
 .control-field {
-  display: grid;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 5px;
-  align-content: start;
   min-width: 0;
 }
 
@@ -591,7 +607,8 @@ body {
 /* Actions --------------------------------------------------------------- */
 
 .actions {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
@@ -683,19 +700,28 @@ body {
  * straight down while the dialog is open.
  */
 .instructions-list {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   margin: 0;
   font-size: 12.5px;
   line-height: 1.4;
 }
 
-.instructions-list dt {
+.instructions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.instructions-row dt {
+  flex: 0 0 auto;
+  width: 84px;
   color: var(--ink-faint);
 }
 
-.instructions-list dd {
+.instructions-row dd {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   color: var(--ink);
   font-weight: 600;
@@ -753,6 +779,7 @@ kbd {
 /* About ----------------------------------------------------------------- */
 
 .app-footer {
+  flex: none;
   border-top: 1px solid var(--rule);
   background: var(--surface);
   padding: 26px 28px 34px;
@@ -763,26 +790,30 @@ kbd {
   margin: 0 auto;
 }
 
-.about {
-  max-width: 68ch;
-}
-
 .about-title {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 14px;
   font-weight: 650;
   letter-spacing: 0.02em;
 }
 
-.about p {
-  margin: 0 0 10px;
-  color: var(--ink-soft);
-  font-size: 13.5px;
-  line-height: 1.6;
+/*
+ * Three paragraphs, three columns. They wrap to one column when the window is
+ * too narrow to keep a readable measure in each.
+ */
+.about-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 32px;
 }
 
-.about p:last-child {
-  margin-bottom: 0;
+.about-columns p {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.55;
 }
 
 .about-link {
@@ -809,7 +840,11 @@ kbd {
 
 @media screen and (max-width: 1060px) {
   .app-shell {
-    grid-template-columns: minmax(0, 1fr);
+    flex-wrap: wrap;
+  }
+
+  .sidebar {
+    width: 100%;
   }
 
   .sidebar {
@@ -832,7 +867,11 @@ kbd {
  * white so no shell color bleeds into the output.
  */
 @media print {
+  /* The screen shell is a flex column sized to the window; on paper it is just
+     a block, and the sheets supply their own geometry. */
   body {
+    display: block;
+    min-height: 0;
     margin: 0;
     padding: 0;
     background: #fff;

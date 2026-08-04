@@ -108,7 +108,8 @@ const MEASUREMENT_EXPRESSION = `(() => {
         gridCount: grids.length,
         weekCounts: grids.map((grid) => Number(grid.dataset.weeks)),
         rowHeights: grids.map((grid) => {
-          const rows = getComputedStyle(grid).gridTemplateRows.split(' ').map(Number);
+          const rows = Array.from(grid.querySelectorAll('.week'))
+            .map((week) => week.getBoundingClientRect().height);
           return { count: rows.length, min: Math.min(...rows), max: Math.max(...rows) };
         }),
       };
