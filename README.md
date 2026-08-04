@@ -1,14 +1,100 @@
-# Printable Calendar
+<p align="center">
+  <img src="assets/social-preview.png" alt="Printable Calendar: a printable August 2026 calendar sheet beside the panel that generated it" width="820">
+</p>
 
-A calendar generator that produces clean PDFs from the browser's own print dialog. Nothing gets
-printed except the calendar itself: no watermark, no site name down in the corner. Just the grid
-and as much blank writing space per day as the paper allows.
+<h1 align="center">Printable Calendar</h1>
 
-It is a static site with no build step and no framework. Two things reach the network: a font, if
-you pick one other than System, and Google Analytics. Neither of them affects what prints. Open
-`index.html` from a local server and everything works.
+<p align="center">
+  A free printable calendar maker that produces clean PDFs straight from your browser.<br>
+  No sign-up, and nothing on the page but the calendar.
+</p>
 
-## Quick start
+<p align="center">
+  <a href="https://adamculpepper.github.io/printable-calendar/"><b>Open the calendar maker</b></a>
+</p>
+
+<p align="center">
+  <img alt="No runtime dependencies" src="https://img.shields.io/badge/runtime%20dependencies-none-1f883d">
+  <img alt="No build step" src="https://img.shields.io/badge/build%20step-none-1f883d">
+  <img alt="700 print assertions" src="https://img.shields.io/badge/print%20assertions-700-b3271f">
+  <img alt="Works offline" src="https://img.shields.io/badge/works-offline-6e6e78">
+</p>
+
+---
+
+Most printable calendar sites hand you a PDF with their own logo on it, or a layout that leaves
+half the page empty. This one gives you the grid and as much blank writing space per day as the
+paper allows. Nothing else reaches the paper.
+
+Pick a year, a starting month and how many months you want. Choose monthly, two months, four
+months, six months, or the whole year on a single sheet. Set the paper size, turn on US holidays
+if you want them, then print. Everything you set is in the address bar, so a calendar you like is
+a link you can bookmark or send to someone.
+
+## What you can make
+
+- **Monthly**, one month per page, with the biggest day cells the sheet will give you
+- **Quarterly and half-year**, two, four or six months per page
+- **Year at a glance**, all twelve months on one sheet
+- **Blank**, with the grid turned off, if you would rather rule your own
+- **2025, 2026, 2027** or any year you type in, starting from any month
+- **Letter, Legal, 11x17, A4** and two poster sizes, landscape or portrait
+- **Monday-start or Sunday-start** weeks
+- **US federal holidays** plus common observances, or none at all
+
+Print to paper, or choose "Save as PDF" in the print dialog and you have a PDF calendar. There is
+also a download that saves the whole thing as one HTML file you can keep or print later.
+
+## Why it prints correctly
+
+Printing from a web page usually goes wrong in the same few ways. You get a blank page at the end,
+a grid that stops two inches short of the bottom, or a month split across two sheets. Most of that
+comes from one mistake, which is sizing the page against the browser window. In a print context the
+window is not the page.
+
+So none of the layout here is measured against the viewport. Paper sizes are defined in exact
+millimeters, the printable area is the sheet minus its margins, and every band inside it gets
+subtracted from that in absolute units. The day grid is handed an explicit height and its weeks
+divide it equally, which is why a five-row month fills the sheet to the same bottom edge as a
+six-row month, with taller cells.
+
+A few other things that matter once ink hits paper:
+
+- Grid lines are borders, never background fills, so they still print when "Background graphics" is
+  off in the print dialog
+- Weekend shading is derived from the grid color's luminance, so the lines stay visible through
+  it. A mid gray fill over a mid gray hairline is why shading looks broken on a lot of printable
+  calendars
+- Only the sheets between pages force a page break, which is what stops the blank thirteenth page
+  at the end of a twelve month run
+- The sheet is centered on the paper, so it prints identically whether the dialog's margins are set
+  to Default or None
+- Type is sized against the cell it lands in, using proportions measured off a printed reference
+  rather than guessed
+
+## Verified against real print output
+
+Claims about print output are worth very little unless something actually prints, so the test
+harness drives real headless Chrome over the DevTools protocol, asks it for a PDF the same way
+"Save as PDF" does, and checks the bytes that come back.
+
+```bash
+npm install
+npm run verify       # 24 configurations plus the download path
+npm run verify:full  # every calendar type x orientation x paper size
+```
+
+Each case asserts that the PDF has exactly the expected page count with no blank trailer, that
+every sheet measures the paper size requested (checked in PDF points), that nothing overflows,
+that content reaches the bottom margin, and that the rows came out equal height. Date arithmetic is
+checked separately, including leap years, both week starts, and every month from 2024 through 2028.
+Easter is checked against dates a real calendar agrees on.
+
+The full matrix is **80 configurations and 700 assertions**, and it has caught real bugs twice:
+once when a stylesheet reorganization made every downloaded multi-month calendar a page too long,
+and once when a layout change quietly printed the sidebar onto every sheet.
+
+## Running it locally
 
 ```bash
 npm install     # holidate, plus browser-sync and pdf-lib for local dev and verification
@@ -16,200 +102,92 @@ npm run vendor  # regenerates vendor/holidate/holidate.js from the installed pac
 npm start       # serves the app at http://localhost:3000
 ```
 
-The app uses ES modules, so it needs to be served over HTTP. Opening `index.html` straight off
-the filesystem will not work, because Chrome blocks module scripts on `file://`.
-
-To get a PDF: set the options, press Print, then choose "Save as PDF" in the dialog. The panel
-tells you which paper size and orientation to pick for whatever you have configured.
+It uses ES modules, so it needs to be served over HTTP. Opening `index.html` off the filesystem
+will not work, because Chrome blocks module scripts on `file://`.
 
 ## Options
 
 | Option | Values |
 | --- | --- |
-| Calendar Type | Monthly (1 month per page), Two Month, Four Month, Six Months, Yearly (12 on one sheet) |
+| Calendar Type | Monthly, Two Month, Four Month, Six Months, Yearly |
 | Year | 2025, 2026, 2027, or anything you type |
-| Starting Month | Any month. The run continues from there and rolls over the year boundary. |
-| Months | 1 to 120 |
-| Title Font | System, or any of 17 Google families. Applies to the month and year heading. |
-| Everything Else | Same list, applied to weekdays, dates and holiday names. |
-| Title / Weekday / Date / Holiday Size | Five steps from Smallest to Largest. These scale the measured defaults rather than setting absolute sizes, so type still adapts to the paper and the cell and cannot be pushed to something that will not fit. |
+| Starting Month | Any month. The run rolls over the year boundary. |
+| Months to Print | 1 to 120 |
 | Orientation | Landscape or Portrait |
 | Paper Size | Letter, 11x17, Legal, Poster, Movie Poster, A4 |
-| Notes | Ruled column beside the grid on single-month sheets, ruled strip along the bottom on multi-month sheets |
-| Weekends | Plain or shaded |
-| Grid Lines | On or off |
-| Grid Color | Gray, black, or a custom color |
 | Weekday Starts | Sunday or Monday |
+| Weekends Shaded | Yes or no |
+| Grid Lines | On or off, gray, black or a custom color |
+| Notes | Ruled column beside the grid, or a strip along the bottom |
 | Adjacent Days | Hide, or print the neighboring months' dates grayed out |
-| Holidays | Off, US federal only, or federal plus common observances and the Easter dates |
-
-Every option is written to the query string, so a configuration is a link you can bookmark or
-send to someone. Only the values that differ from the defaults appear, which keeps the URL short.
-
-## How the print layout works
-
-This is the part that decides whether the output is usable, so it is worth explaining.
-
-In a print context the viewport is not the page. Anything sized with `vh`, or with `100%` of the
-body, or with a flex-fill trick that leans on viewport height, measures the wrong box and falls
-apart the moment it reaches a printer. So none of that is used here.
-
-Instead `js/layout.js` starts from the physical sheet. Paper dimensions live in `js/config.js` in
-exact millimeters, and every measurement downstream stays in millimeters, so no calculation ever
-mixes inches with millimeters inside a `calc()`. The printable area is the sheet minus its
-margins. The title block, the weekday strip and the notes area are each subtracted from that, and
-whatever remains is handed to the day grid as an explicit height. The grid then divides it with
-`grid-auto-rows: 1fr`.
-
-That last detail is what makes a five-row month stretch to the same bottom edge as a six-row
-month, with taller cells. It looks different from month to month and that is intended: the sheet
-always fills to the bottom margin.
-
-A few other things that matter on paper:
-
-- Grid lines are borders, never background fills, so they still print when "Background graphics"
-  is switched off in the dialog. Weekend shading is the one exception, since a fill is the only
-  way to shade a column, and the panel says so when you turn it on.
-- Weekend shading is kept much lighter than the grid color. A mid gray fill swallows a mid gray
-  hairline, which is the failure mode you see on a lot of printable calendars. The tint is
-  derived from the grid color's luminance, so it stays out of the way even if you pick a custom
-  color.
-- Only the sheets between pages force a page break. The last one does not, which is what stops a
-  blank thirteenth page appearing at the end of a twelve month run.
-- Four tenths of a millimeter is trimmed off the printable height of every page. A page sized to
-  exactly the printable area is a coin flip in Chrome, because any sub-pixel rounding tips it over
-  the page box and emits a blank trailer. The trim is invisible on paper and removes the question.
-- System font stack only, so there is no font to load and nothing to go wrong mid-print.
-- Type is sized against the cell it sits in, not against a fixed scale, so a five-row month gets
-  larger date numbers than a six-row one. The ratios come from measuring print-a-calendar.com's
-  own rendered sheet: date numbers at about 0.21 of the cell height on Small and 0.29 on Big,
-  weekday labels slightly larger than the date numbers, and a month title about 2.5 times the
-  date numbers. Everything here lands within a few percent of those.
-- `css/calendar.css` stands alone. It carries its own box-sizing reset and its own print rules
-  rather than borrowing them from the app stylesheet, because the downloaded file ships that one
-  sheet and nothing else.
-
-## Verification
-
-Claims about print output are worth very little unless something actually prints, so
-`scripts/verify-print.mjs` drives real headless Chrome over the DevTools protocol. It serves the
-app, navigates to each configuration, asks Chrome for a PDF the same way "Save as PDF" does, and
-then checks the bytes that come back.
-
-```bash
-npm run verify       # 24 configurations plus the download path
-npm run verify:full  # adds every calendar type x orientation x paper size
-```
-
-Each case asserts that the PDF has exactly the expected page count with no blank trailer, that
-every sheet measures the paper size that was requested (checked in PDF points), that nothing
-overflows a sheet, that content reaches the bottom margin, and that the day grid rows came out
-equal height. Date arithmetic is checked separately by importing `js/date-utils.js` straight into
-node, including leap years, both week starts, and every month from 2024 through 2028. Easter is
-checked against dates a real calendar agrees on, at both ends of the range it can fall in.
-
-The downloaded file gets printed too, across six layouts. That last part is not padding. An
-earlier version of this code passed 576 assertions while every multi-month download quietly came
-out a page long, because the day grid was relying on a box-sizing reset that lived in the app
-stylesheet and the export does not ship that file. A single-row monthly sheet absorbs the extra
-hairline; anything denser does not. The only thing that catches it is printing the exported file
-and counting pages, so that is what the harness now does.
-
-Type scales are checked without a browser too. Pushing every size to its largest on every calendar
-type and paper size has to leave the date inside half the cell height and the title and weekday
-labels inside their bands, which is what stops a size control from being able to produce a sheet
-that does not fit.
-
-The full matrix is 80 configurations and 700 assertions. It passes.
-
-There is also `scripts/capture-preview.mjs`, which renders a handful of configurations to PNG in
-`.tmp/preview` so the layout can be reviewed by eye rather than only by assertion.
+| Holidays | Off, US federal only, or federal plus common observances |
+| Title Font / Body Font | System, or any of 17 Google families |
+| Title / Weekday / Date / Holiday Size | Five steps, scaling the measured defaults |
 
 ## Fonts
 
-Type is set in the system font stack by default, and nothing is fetched in that state. Pick a
-family from the Type tab and the page adds a `<link>` to Google Fonts for the one or two families
-in use, dropping it again if you go back to System.
+Type is set in the system font stack by default, and nothing is fetched in that state. Pick a family
+and the page adds a link to Google Fonts for the one or two families in use.
 
-Two things follow from that. Every stack ends in the system fonts, so a blocked or missing network
-degrades to the original typography rather than to nothing. And the Print button waits on
-`document.fonts.ready` (capped at a second and a half) before opening the dialog, because Chrome
-will otherwise happily print a page whose webfont is still in flight, which puts fallback metrics
-on the paper.
+Every stack ends in the system fonts, so a blocked or missing network degrades to the original
+typography rather than to nothing. The Print button waits on `document.fonts.ready` before opening
+the dialog, because Chrome will otherwise print a page whose webfont is still in flight and put
+fallback metrics on the paper.
 
-The downloaded HTML carries the same `<link>`, so it keeps the typography you chose. That link is
-the only thing in the file that needs a network; without it the calendar falls back to the system
-fonts and still prints correctly.
-
-Sizes are scales rather than absolute values. Each control multiplies the measured default, so
-type continues to adapt to the paper and the cell, and the bounds hold whatever combination is
-selected.
+Sizes are scales, not absolute values. Each control multiplies the measured default, so type keeps
+adapting to the paper and the cell, and no combination can produce a sheet that does not fit.
 
 ## Holidays
 
-Holiday data comes from [holidate](https://github.com/zachnology/holidate), an MIT-licensed
-library by Zachary Gomez, installed from npm and vendored into `vendor/holidate/holidate.js` by
+Holiday dates come from [holidate](https://github.com/zachnology/holidate), an MIT-licensed library
+by Zachary Gomez, installed from npm and vendored into `vendor/holidate/holidate.js` by
 `npm run vendor`. The copyright notice in the generated file is lifted from the upstream license
-rather than retyped. The package ships as
-CommonJS across three files, so the vendor script wraps the sources verbatim in a small module
-shim rather than copying them by hand and letting them drift. File hashes are recorded in the
-generated header.
+rather than retyped.
 
-holidate covers the United States only, so the Holidays control is US only by definition. It
-handles the observed-date rule, which is why you will see both June 19 2027 and the Friday before
-it marked: Juneteenth falls on a Saturday that year.
+holidate covers the United States only, which is why the Holidays control is US only. It handles
+the observed-date rule, so you will see both June 19 2027 and the Friday before it marked, because
+Juneteenth falls on a Saturday that year.
 
-Two things are corrected on the way through, both in `js/holidays.js`:
-
-Easter is recomputed. holidate derives it from a fixed golden-number table with no century
-correction, which is right for roughly 1900 to 2199 and wrong outside that, and the year field
-accepts a much wider range than that. Easter and the four dates that hang off it (Good Friday,
-Palm Sunday, Ash Wednesday, Mardi Gras) are all a fixed number of days from it, so one corrected
-anchor moves the whole set.
-
-Where two holidays share a date, the federal one wins the cell. June 19 2022 was both Juneteenth
-and Father's Day, and without an explicit precedence rule the cell printed as Father's Day.
-
-Holiday names print small and light along the bottom of the cell, on a single line, truncated
-rather than wrapped. Two federal holidays have names long enough to swamp a cell even so, and
-those are shortened. Where cells are too narrow for a name at all, the date is bolded and given a
-small ring, with the full name available to screen readers and on hover.
+Two things are corrected on the way through. Easter is recomputed, because holidate derives it from
+a fixed golden-number table with no century correction, which is right for roughly 1900 to 2199 and
+wrong outside it. And where two holidays share a date the federal one wins the cell, because June
+19 2022 was both Juneteenth and Father's Day and it printed as Father's Day.
 
 ## Assumptions
 
-Worth stating plainly, since the reference site does not publish its own:
+Worth stating plainly, since the reference sites do not publish their own.
 
-Poster is taken as 18 x 24 in, and Movie Poster as 27 x 40 in, the US one sheet. Neither size has
-a single standard, so both live in `PAPER_SIZES` in `js/config.js` if you want different numbers.
+Poster is taken as 18 x 24 in, and Movie Poster as 27 x 40 in, the US one sheet. Neither has a
+single standard, so both live in `PAPER_SIZES` in `js/config.js` if you want different numbers.
 
-Margins are 0.35 in where the reference uses 0.5 in. That is a deliberate difference: the point of
-this calendar is writing space, and the reference also stops its grid short of the bottom margin
-where this one fills to it.
+Margins are 0.35 in. The point of this calendar is writing space.
 
-Day Size controls the typographic scale of the date numbers. It does not shrink the grid, because
-the grid filling the sheet is a hard requirement here.
+Download HTML saves a self-contained file, not a PDF. Generating a real PDF would mean pulling in a
+PDF library, and the browser already makes better ones. Print is the PDF path.
 
-Download HTML saves a self-contained file with no scripts in it, not a PDF. Generating a real PDF
-would mean pulling in a PDF library, and the browser already makes better ones. Print is the PDF
-path.
+## What reaches the network
+
+Two things: a font, if you pick one other than System, and Google Analytics. Neither affects what
+prints, and neither goes into the downloaded file.
 
 ## Files
 
 ```
-index.html                    markup shell
-css/app.css                   the options panel, screen only
-css/calendar.css              the printed artifact, screen preview and print
-js/analytics.js               Google Analytics config, loaded as a classic script
-js/config.js                  paper sizes, calendar types, defaults
-js/date-utils.js              month grids, week starts, leap years, rollover
-js/holidays.js                adapter over vendored holidate, date-keyed lookups
-js/layout.js                  page box arithmetic, the @page rule, weekend tint
-js/render.js                  DOM generation
-js/controls.js                the options panel and the URL round trip
-js/app.js                     wiring, print, download
-scripts/lib/browser.mjs       static server, headless Chrome, minimal CDP client
-scripts/vendor-holidate.mjs   npm package to browser module
-scripts/verify-print.mjs      headless Chrome, real PDFs, assertions
-scripts/capture-preview.mjs   PNG renders for eyeballing
-vendor/holidate/              generated, MIT, do not edit by hand
+index.html                     markup shell
+css/app.css                    the options panel, screen only
+css/calendar.css               the printed artifact, screen preview and print
+js/analytics.js                Google Analytics config
+js/config.js                   paper sizes, calendar types, fonts, defaults
+js/date-utils.js               month grids, week starts, leap years, rollover
+js/holidays.js                 adapter over vendored holidate, date-keyed lookups
+js/layout.js                   page box arithmetic, the @page rule, type scales
+js/render.js                   DOM generation
+js/controls.js                 the tabbed options panel and the URL round trip
+js/app.js                      wiring, fonts, print, download
+scripts/lib/browser.mjs        static server, headless Chrome, minimal CDP client
+scripts/vendor-holidate.mjs    npm package to browser module
+scripts/verify-print.mjs       headless Chrome, real PDFs, assertions
+scripts/capture-preview.mjs    PNG renders for eyeballing
+scripts/build-social-images.mjs  share images, rendered from the real app
+vendor/holidate/               generated, MIT, do not edit by hand
 ```

@@ -3,8 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Printable Calendar</title>
-<meta name="description" content="Build a printable calendar and save it as a PDF from the browser. No branding on the page, maximum writing space per day.">
+<title>Printable Calendar: free printable PDF calendar maker</title>
+<meta name="description" content="Make a printable calendar and save it as a PDF from your browser. Monthly, quarterly or year-at-a-glance, any paper size, US holidays, and nothing but the calendar on the page. Free, no sign-up, no watermark.">
+<link rel="canonical" href="https://adamculpepper.github.io/printable-calendar/">
+<meta name="theme-color" content="#b3271f">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Printable Calendar">
+<meta property="og:url" content="https://adamculpepper.github.io/printable-calendar/">
+<meta property="og:title" content="Printable Calendar: free printable PDF calendar maker">
+<meta property="og:description" content="Monthly, quarterly or year-at-a-glance, any paper size, US holidays, and nothing but the calendar on the page. Free, no sign-up, no watermark.">
+<meta property="og:image" content="https://adamculpepper.github.io/printable-calendar/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A printable calendar sheet for August 2026 beside the options panel that generated it.">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Printable Calendar: free printable PDF calendar maker">
+<meta name="twitter:description" content="Monthly, quarterly or year-at-a-glance, any paper size, US holidays, and nothing but the calendar on the page.">
+<meta name="twitter:image" content="https://adamculpepper.github.io/printable-calendar/assets/og-image.png">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-WXB7ZH58X5"></script>
 <script src="js/analytics.js"></script>
@@ -15,6 +33,31 @@
 <!-- Pointed at Google Fonts only while a non-system font is selected. -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" id="font-link">
+<!-- Structured data, not behaviour. JSON-LD is only read by crawlers inline. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Printable Calendar",
+  "url": "https://adamculpepper.github.io/printable-calendar/",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any browser",
+  "description": "Make a printable calendar and save it as a PDF from your browser. Monthly, quarterly or year-at-a-glance, any paper size, US holidays, and nothing but the calendar on the page.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "isAccessibleForFree": true,
+  "featureList": [
+    "Monthly, two-month, four-month, six-month and year-at-a-glance layouts",
+    "Letter, Legal, 11x17, A4 and poster paper sizes",
+    "Landscape or portrait",
+    "Sunday or Monday week start",
+    "US federal holidays and common observances",
+    "Google Fonts and adjustable type sizes",
+    "Prints to PDF with no watermark or branding"
+  ],
+  "codeRepository": "https://github.com/adamculpepper/printable-calendar"
+}
+</script>
+
 <!-- Populated at runtime with the @page rule and the computed page geometry. -->
 <style id="page-style"></style>
 <!-- Screen-only scale factor for the preview. Never affects print. -->

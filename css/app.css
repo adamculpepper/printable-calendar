@@ -361,8 +361,8 @@ body {
 /*
  * The bubble opens downward, because the sidebar is a scroll container and a
  * tooltip above the first row of a card would be clipped by its own top edge.
- * It is anchored to an edge of the marker rather than centred on it for the
- * same reason: centred, a bubble beside a left-hand label hangs off the side of
+ * It is anchored to an edge of the marker rather than centered on it for the
+ * same reason: centered, a bubble beside a left-hand label hangs off the side of
  * the card and gets cut off. Fields in the right-hand column anchor the other
  * way so the bubble opens inward from there.
  */
