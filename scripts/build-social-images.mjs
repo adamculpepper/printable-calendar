@@ -41,7 +41,7 @@ const COMPOSE = (width, height) => `(() => {
         '<p class="banner-eyebrow">Free &middot; No sign-up &middot; No watermark</p>' +
         '<h1 class="banner-title">Printable Calendar</h1>' +
         '<p class="banner-sub">Make a calendar, print it, save it as a PDF. Monthly through year-at-a-glance, any paper size, US holidays.</p>' +
-        '<p class="banner-url">adamculpepper.github.io/printable-calendar</p>' +
+        '<p class="banner-url">calendar.adamculpepper.net</p>' +
       '</div>' +
       '<div class="banner-art">' + sheet + '</div>' +
     '</div>';

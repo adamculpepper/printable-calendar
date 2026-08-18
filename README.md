@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://adamculpepper.github.io/printable-calendar/"><b>Open the calendar maker</b></a>
+  <a href="http://calendar.adamculpepper.net/"><b>Open the calendar maker</b></a>
 </p>
 
 <p align="center">
