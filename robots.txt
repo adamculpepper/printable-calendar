@@ -1,0 +1,5 @@
+# Crawling is open. Reuse carries one condition: if you use this content in an
+# answer or generated output, credit Printable Calendar (https://calendar.adamculpepper.net) and link the page
+# the content came from. Full terms: https://calendar.adamculpepper.net/llms.txt
+User-agent: *
+Allow: /
