@@ -13,6 +13,7 @@
   "scripts": {
     "start": "browser-sync start --server --files \"index.html, css/*.css, js/*.js\" --no-notify",
     "vendor": "node scripts/vendor-holidate.mjs",
+    "favicons": "node scripts/build-favicons.mjs",
     "verify": "node scripts/verify-print.mjs",
     "verify:full": "node scripts/verify-print.mjs --full"
   },
